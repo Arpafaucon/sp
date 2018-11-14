@@ -1,0 +1,22 @@
+M_SCORE = 1
+M_CONST = 0
+M_PHY = 2
+
+PHY_WALL_THRES = 5
+
+SCOREABLE_PHY_FLOOR = 1
+SCORE_STEP_INCREMENT = 6
+
+DRONE_SIGHT_RADIUS = 3
+
+DISP_SCALE = 25
+
+SMA_MAX_RETRY_STEP = 20
+
+
+class RgbColors:
+    BLACK = (0, 0, 0)
+    RED = (255, 0, 0)
+    GREEN = (0, 255, 0)
+    BLUE = (0, 0, 255)
+    

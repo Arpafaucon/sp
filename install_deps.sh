@@ -1,0 +1,1 @@
+sudo apt install ros-kinetic-map-server
