@@ -7,7 +7,10 @@ project(sp_msgs)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED
+  std_msgs
+  message_generation
+)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -45,8 +48,8 @@ find_package(catkin REQUIRED)
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  msg/admiral_status.msg
-  msg/captain_order
+  admiral_status.msg
+  captain_order.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -64,10 +67,10 @@ add_message_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs  # Or other packages containing msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -102,7 +105,7 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES sp_msgs
 #  CATKIN_DEPENDS other_catkin_pkg
-#  DEPENDS system_lib
+ DEPENDS message_runtime
 )
 
 ###########
