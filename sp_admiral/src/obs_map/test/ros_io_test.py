@@ -11,7 +11,7 @@ def callback(data):
 def test_load():
     rospy.init_node('test_ROSio')
 
-    valid, obs_map = load_map_ROS('', None)
+    valid, obs_map = load_map_ROS('')
     obs_map2 = create_observation_map('src/obs_map/test/data/map1.pgm')
     if not valid:
         print('loading failed')

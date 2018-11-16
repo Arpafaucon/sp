@@ -12,6 +12,7 @@ array[line, column, mode]
 """
 from PIL import Image
 import numpy as np
+import math
 
 from .constants import *
 
@@ -25,6 +26,7 @@ def disp_image(im_array, mode='HSV', scale=20):
         mode (str, optional): Defaults to 'HSV'. image channels description ('HSV' ou '')
         scale (int, optional): Defaults to 20. upscale factor
     """
+    
     orig = Image.fromarray(im_array, mode=mode)
     new_format = tuple([scale*dim for dim in orig.size])
     enlarged = orig.resize(new_format)
@@ -34,11 +36,17 @@ def disp_image(im_array, mode='HSV', scale=20):
 def create_observation_map(map_filename, wall_radius=4, time_bonus=1):
     floorplan = Image.open(map_filename)
     dynamic_map = floorplan.convert("RGB").convert("HSV")
-    dyn_map_array = np.array(dynamic_map)
-    dyn_map_array[:, :, M_CONST] = 32
-    print(dyn_map_array.shape)
-    return dyn_map_array
+    obs_map = np.array(dynamic_map)
+    obs_map[:, :, M_CONST] = 32
+    print(obs_map.shape)
+    _prepare_map(obs_map, wall_radius)
+    return obs_map
 
+
+def _prepare_map(observation_map, wall_radius):
+    inflate_walls(observation_map, wall_radius)
+    score_generation_step(observation_map)
+    # return observation_map
 
 
 
@@ -156,16 +164,16 @@ def inflate_cell(obs_array, wall_cell_coord, radius):
 
 
 def inflate_walls(observation_array, wall_radius):
-    w, h, _ = observation_array.shape
-    for i in range(w):
-        for j in range(h):
+    h, w, _ = observation_array.shape
+    for i in range(h):
+        for j in range(w):
             if observation_array[i, j, M_PHY] == 0:
                 # wall
                 inflate_cell(observation_array, (i, j), wall_radius)
 
 
 def update_cell_score(cell_tuple):
-    if cell_tuple[M_PHY] > SCOREABLE_PHY_FLOOR:
+    if cell_tuple[M_PHY] > SCOREABLE_PHY_FLOOR and cell_tuple[M.SCORE] < MAX_SCORE - SCORE_STEP_INCREMENT:
         cell_tuple[M_SCORE] += SCORE_STEP_INCREMENT
         return SCORE_STEP_INCREMENT
     return 0
@@ -180,7 +188,7 @@ def score_generation_step(observation_array):
     return total
 
 
-def reap_obs_score(im_array, coordinates, sight_radius=DRONE_SIGHT_RADIUS):
+def reap_obs_score(im_array, coordinates, sight_radius):
     score = 0
     for i, j in get_visible_cells(coordinates, sight_radius, im_array.shape):
         score += im_array[i, j, M_SCORE]
@@ -188,14 +196,14 @@ def reap_obs_score(im_array, coordinates, sight_radius=DRONE_SIGHT_RADIUS):
     return score
 
 
-def reap_state_score(obs_map, state, sight_radius=DRONE_SIGHT_RADIUS):
+def reap_state_score(obs_map, state, sight_radius):
     score = 0
     for coord in state:
         score += reap_obs_score(obs_map, coord, sight_radius)
     return score
 
 
-def observation_score(im_array, coordinates, radius=DRONE_SIGHT_RADIUS):
+def observation_score(im_array, coordinates, radius):
     # w, h, _ = im_array.shape
     x, y = coordinates
     radius2 = radius**2

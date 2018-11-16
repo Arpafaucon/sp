@@ -48,8 +48,8 @@ find_package(catkin REQUIRED
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  admiral_status.msg
-  captain_order.msg
+  AdmiralStatus.msg
+  AdmiralOrders.msg
 )
 
 ## Generate services in the 'srv' folder
