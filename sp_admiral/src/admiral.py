@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#coding: utf-8
+# coding: utf-8
 
 """
 
@@ -51,21 +51,18 @@ def test_score(obs_map):
         obs_map[i, 10,  M_SCORE] = int(i*step)
     print(obs_map[:, 10])
 
+
 def doctest_fun():
     import doctest
     doctest.testmod()
 
+
 def rosmain():
     # setup_node()
     # params = load_params_ROS('')
-    # NUM_DRONES = 8
-    # ROOT_TOPIC = ''
-    # WALL_RADIUS = 6
-    # TEMP0 = 100
-    # N_STEPS = 40
-    ros_if = AdmiralRosInterface('sp/admiral_status')
+    ros_if = AdmiralRosInterface()
     params = ros_if.get_params()
-    
+
     valid, obs_map = ros_if.load_map_ROS('', wall_radius=params.WALL_RADIUS)
     state = None
     if not valid:
@@ -73,33 +70,30 @@ def rosmain():
         return
     rate = rospy.Rate(params.RATE)
     done = False
-    
+
+    optim = SimulAnnealingOptimisation(
+        obs_map, params)
     while not done:
-        optim = SimulAnnealingOptimisation(
-            obs_map, params)
-        state_f, score_f, temp = optim._simul_annealing_simple(state, n_iterations=params.N_ITERATIONS, temp0=params.INITIAL_TEMP)
+        state_f, score_f, temp = optim._simul_annealing_simple(
+            state, n_iterations=params.N_ITERATIONS, temp0=params.INITIAL_TEMP)
         rospy.loginfo('converged with score {}'.format(score_f))
         state = state_f
-        ros_if.publish_status(obs_map, params.NUM_DRONES, state_f, params.N_ITERATIONS, score_f, score_f)
-        # ros_if.publish_score(obs_map)
-        ros_if.publish_score(obs_map)
-        ros_if.publish_orders(state)
+
+        # so this is the 
         reap_state_score(obs_map, state, params.DRONE_SIGHT_RADIUS)
+        ros_if.publish_msg(obs_map, state, params.NUM_DRONES,
+                           params.N_ITERATIONS, score_f, score_f)
+        # ros_if._publish_status(obs_map, params.NUM_DRONES, state_f, params.N_ITERATIONS, score_f, score_f)
         score_generation_step(obs_map)
-        
+
         rate.sleep()
         if rospy.is_shutdown():
             done = True
     rospy.signal_shutdown('normal shutdown')
 
+
 def main():
     obs_map = create_observation_map('map2.pgm', wall_radius=6)
-    # obm.inflate_walls(obs_map, 6)
-    # print(obs_map.shape)
-    # print(obs_map[:,10])
-    # test_score(obs_map)
-    # disp_image(obs_map)
-    # obm.score_generation_step(obs_map)
     optim = SimulAnnealingOptimisation(
         obs_map, 8)
     optim._graphic_simul_annealing(None, 10, 1)

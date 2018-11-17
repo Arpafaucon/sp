@@ -1,7 +1,7 @@
 obs_map:
-  num_drones: 8
+  num_drones: 4
   wall_radius: 6
   initial_temp: 100
   n_iterations: 40
   drone_sight_radius: 3
-  rate: 1
+  rate: .4

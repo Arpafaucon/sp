@@ -1,0 +1,4 @@
+<launch>
+    <!-- <node name="rviz" pkg="rviz" type="rviz"> -->
+    <node name="admiral_viz" pkg="sp_admiral" type="markers.py" output="screen"/>
+</launch>

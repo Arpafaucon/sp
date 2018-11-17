@@ -19,9 +19,10 @@ STATUS_TOPIC = "admiral_status"
 SCORE_TOPIC = "admiral_score"
 ORDERS_TOPIC = "admiral_orders"
 
+QUEUE_SIZE = 5
 
 class AdmiralRosInterface(object):
-    def __init__(self, channel_name='sp/admiral', queue_size=10):
+    def __init__(self):
         """
         We expect the node to be already setup (via setup_node)
 
@@ -32,11 +33,11 @@ class AdmiralRosInterface(object):
         """
         self._setup_node()
         self.status_pub = rospy.Publisher(
-            "sp/"+STATUS_TOPIC, AdmiralStatus, queue_size=queue_size)
+            "/sp/"+STATUS_TOPIC, AdmiralStatus, queue_size=QUEUE_SIZE)
         self.score_pub = rospy.Publisher(
-            "sp/"+SCORE_TOPIC, OccupancyGrid, queue_size=queue_size)
+            "/sp/"+SCORE_TOPIC, OccupancyGrid, queue_size=QUEUE_SIZE)
         self.orders_pub = rospy.Publisher(
-            "sp/"+ORDERS_TOPIC, AdmiralOrders, queue_size=queue_size)
+            "/sp/"+ORDERS_TOPIC, AdmiralOrders, queue_size=QUEUE_SIZE)
         self.seq = 0
         # init in load_params
         self.params = self._load_params_ROS()
@@ -46,7 +47,7 @@ class AdmiralRosInterface(object):
     def _setup_node(self, name=NODE_NAME):
         rospy.init_node(name=name)
 
-    def load_map_ROS(self, map_topic_root, wall_radius=4, time_bonus=1, timeout=4):
+    def load_map_ROS(self, map_topic_root, wall_radius=4, timeout=4):
         map_topic = '{}/map'.format(map_topic_root)
         # meta_topic = '{}/map_metadata'.format(map_topic_root)
         try:
@@ -107,8 +108,8 @@ class AdmiralRosInterface(object):
         cos_yaw = math.cos(yaw)
         sin_yaw = math.sin(yaw)
         def transform_drones(drone_i, drone_j):
-            flat_x = drone_j * self.map_info.resolution
-            flat_y = (self.map_info.height - drone_i) * self.map_info.resolution
+            flat_x = (drone_j+.5) * self.map_info.resolution
+            flat_y = (self.map_info.height - drone_i - .5) * self.map_info.resolution
             drone_x = pos.x + flat_x * cos_yaw - flat_y * sin_yaw
             drone_y = pos.y + flat_x * sin_yaw + flat_y * cos_yaw
             return drone_x, drone_y
@@ -120,18 +121,26 @@ class AdmiralRosInterface(object):
             list_y.append(dry)
         return list_x, list_y
 
-    def publish_orders(self, state):
+    def publish_msg(self, obs_map, state, num_drones, convergence_steps, score, avg_score):
+        self._publish_orders(state)
+        self._publish_score(obs_map)
+        self._publish_status(num_drones, state, convergence_steps, score, avg_score)
+        rospy.logdebug('Admiral messages published')
+
+
+    def _publish_orders(self, state):
         list_x, list_y = self._transform_coordinates(state)
         orders = AdmiralOrders()
         orders.header.stamp = rospy.Time.now()
         orders.header.seq = self.seq
-        orders.num_drones - self.params.NUM_DRONES
+        orders.num_drones = self.params.NUM_DRONES
+        orders.sight_radius = self.params.DRONE_SIGHT_RADIUS * self.map_info.resolution
         orders.x_coords = list_x
         orders.y_coords = list_y
         self.orders_pub.publish(orders)
         
 
-    def publish_score(self, obs_map):
+    def _publish_score(self, obs_map):
         SCALE = 255./100
         grid = OccupancyGrid()
         grid.header.stamp = rospy.Time.now()
@@ -146,7 +155,7 @@ class AdmiralRosInterface(object):
         grid.data = score_list
         self.score_pub.publish(grid)
 
-    def publish_status(self, obs_map, num_drones, ij_coords, convergence_steps, score, avg_score):
+    def _publish_status(self, num_drones, ij_coords, convergence_steps, score, avg_score):
         i_coords = []
         j_coords = []
         for di, dj in ij_coords:
@@ -166,5 +175,4 @@ class AdmiralRosInterface(object):
         mes.avg_score = avg_score
 
         self.status_pub.publish(mes)
-        rospy.logdebug('Admiral status published')
 
