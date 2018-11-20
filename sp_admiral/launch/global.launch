@@ -3,7 +3,7 @@
   <include file="$(find sp_admiral)/launch/viz.launch"/>
   <rosparam command="load" file="$(find sp_admiral)/param/admiral.yaml" ns="/sp/admiral"/>
 
-  <node name="admiral" pkg="sp_admiral" type="admiral.py" ns="/sp" output="screen">
+  <node name="admiral" pkg="sp_admiral" type="admiral.py" ns="/sp" output="screen" required="True">
     <param name="namespace" type="str" value="/sp/admiral"/>
   </node>
   <!-- <node name="admiral_viz" pkg> -->

@@ -1,12 +1,16 @@
+#coding utf8
+"""
+Simulated annealing optimisation support
+for Admiral.py
+"""
 import random
 import math
-import time
 import copy
 
 import obs_map.src.support as obm
 
 
-from constants import *
+from .constants import M, SMA_MAX_RETRY_STEP, PHY_WALL_THRES
 
 EVT_STEP = 1
 EVT_CONVERGE = 2
@@ -16,8 +20,15 @@ CMD_UNPAUSE = 12
 CMD_TIME_UPDATE = 13
 CMD_STOP = 14
 
+TEMP_DECREASE_RATE = 0.95
+
+
 class SimulAnnealingOptimisation(object):
-    def __init__(self, observation_map, params, display=False, interface=None):
+    """
+    Simulated annealing support class
+    Possible future support of an interface mechanism
+    """
+    def __init__(self, observation_map, params, interface=None):
         self.obs_map = observation_map
         self.map_dimensions = observation_map.shape
         self.interface = interface
@@ -28,7 +39,7 @@ class SimulAnnealingOptimisation(object):
         return state[drone_index]
 
     def _is_legal_drone(self, drone_x, drone_y):
-        return self.obs_map[drone_x, drone_y, M_PHY] > PHY_WALL_THRES
+        return self.obs_map[drone_x, drone_y, M.PHY] > PHY_WALL_THRES
 
     def _is_legal_state(self, state):
         for drone_index in range(self.num_drones):
@@ -55,92 +66,116 @@ class SimulAnnealingOptimisation(object):
         new_coords = random.choice(
             self._neighbour_drone_positions(*moved_drone_coord))
         new_state = copy.copy(state)
-        
+
         new_state[moved_drone_index] = new_coords
         return new_state
 
     def _score_state(self, state):
         local_obs_array = self.obs_map.copy()
         score = 0
-        for drone_index, drone_coords in enumerate(state):
+        for drone_coords in state:
             score += obm.reap_obs_score(local_obs_array,
                                         drone_coords, self.params.DRONE_SIGHT_RADIUS)
         return score
 
-    def _init_pos_drones(self, init_positions):
+    def init_pos_drones(self, init_positions):
+        """
+        Find a suitable initial position for the optimisation
+        drones must be on free and distinct cells
+
+        Args:
+            init_positions (state_t|None): initial hint, or None to generate from scratch
+
+        Raises:
+            AttributeError: not enough free space on the observation map
+
+        Returns:
+            state_t: initial state for the optimisation process
+        """
         if init_positions is None:
             # assert init_positions is not None, "not supported for now"
             state = []
-            h, w = self.map_dimensions[:2]
-            drones_to_places =self.num_drones
+            drones_to_places = self.num_drones
             for i, j in obm.spiraling_coordinates_generator(self.map_dimensions):
                 if self._is_legal_drone(i, j):
                     state.append((i, j))
                     drones_to_places -= 1
                     if drones_to_places == 0:
                         return state
-            print('Not enough free cell : {} unplaced drones'.format(drones_to_places))
+            print('Not enough free cell : {} unplaced drones'.format(
+                drones_to_places))
             raise AttributeError("not enough free space")
-                
+
         elif self._is_legal_state(init_positions):
             return init_positions
         else:
             # raise NotImplementedError
             return init_positions
 
-    def _simul_annealing_step(self, temperature, state, current_score, num_retries = SMA_MAX_RETRY_STEP):
-        for i_attempt in range(SMA_MAX_RETRY_STEP):
+    def _simul_annealing_step(self,
+                              temperature, state, current_score, num_retries=SMA_MAX_RETRY_STEP):
+        for _ in range(num_retries):
             proposed_state = self._neighbour_state(state)
             score = self._score_state(proposed_state)
-            if(score > current_score):
+            if score > current_score:
                 # take it
-                # state = proposed_state
                 return proposed_state, score
-            else:
-                delta = current_score - score
-                proba = math.exp(-delta/temperature)
-                take_it = random.random() < proba
-                if(take_it):
-                    # state = proposed_state
-                    return proposed_state, score
-        print('step stalled: no better state found after {} attempts'.format(SMA_MAX_RETRY_STEP))
+
+            delta = current_score - score
+            proba = math.exp(-delta/temperature)
+            take_it = random.random() < proba
+            if take_it:
+                return proposed_state, score
+        print('step stalled: no better state found after {} attempts'.format(
+            SMA_MAX_RETRY_STEP))
         return state, score
         #     else:
         #         # try again
         #         return self._simul_annealing_step(temperature, state, current_score)
 
-    def _simul_annealing_simple(self, initial_state, n_iterations, temp0=100):
+    def simul_annealing_simple(self, initial_state, n_iterations, temp0=100):
+        """
+        Simple one-time optimisation routine
+        Explore the state space and return an optimal state wrt the score
+
+        Args:
+            initial_state (state_t): seed state, for initialisation
+            n_iterations (int): number of initialisation steps
+            temp0 (float, optional): Defaults to 100. initial temperature
+
+        Returns:
+            state_t, float, float: final_state, final_score, final_temperature
+        """
         temp = temp0
-        state = self._init_pos_drones(initial_state)
-        # state = initial_state
+        assert self._is_legal_state(
+            initial_state), "illegal state, run init_pos_drone"
+        # state = self.init_pos_drones(initial_state)
+        state = initial_state
         score = self._score_state(state)
         for _ in range(n_iterations):
             state, score = self._simul_annealing_step(temp, state, score)
-            temp *= 0.95
+            temp *= TEMP_DECREASE_RATE
         # print('converged')
         return (state, score, temp)
 
-    def _simul_annealing_evt(self, initial_state, n_iteration, temp0=100):
-        temp = temp0
-        state = initial_state
-        score = self._score_state(state)
-        step = 0
-        done = False
-        avg_score = 0
-        while not done:
-            self._simul_annealing_step(temp, state, score)
-            self.interface.handle(EVT_STEP, (state, score, temp))
-            temp *= 0.95
-            avg_score = 0.9*avg_score+0.1*score
-            if (abs(score - avg_score) / score) < 1e-3 and step > 100:
-                    print("good enough, exiting")
-                    # pause = True
-                    done = True
-        print('finished')
-        self.interface.handle(EVT_STEP, (state, score, temp, ))
-
-
-
+    # def _simul_annealing_evt(self, initial_state, n_iteration, temp0=100):
+    #     temp = temp0
+    #     state = initial_state
+    #     score = self._score_state(state)
+    #     step = 0
+    #     done = False
+    #     avg_score = 0
+    #     while not done:
+    #         self._simul_annealing_step(temp, state, score)
+    #         self.interface.handle(EVT_STEP, (state, score, temp))
+    #         temp *= TEMP_DECREASE_RATE
+    #         avg_score = 0.9*avg_score+0.1*score
+    #         if (abs(score - avg_score) / score) < 1e-3 and step > 100:
+    #             print("good enough, exiting")
+    #             # pause = True
+    #             done = True
+    #     print('finished')
+    #     self.interface.handle(EVT_STEP, (state, score, temp, ))
 
     # def _graphic_simul_annealing(self, initial_state, n_iteration, temp0=100):
     #     # def on_score_step():
@@ -210,6 +245,6 @@ class SimulAnnealingOptimisation(object):
     #             temp *= 0.95
     #         else:
     #             time.sleep(0.5)
-                
+
     #     print('finished')
     #     pygame.quit()
