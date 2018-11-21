@@ -11,7 +11,7 @@ from sp_msgs.msg import AdmiralStatus, AdmiralOrders
 # from geometry_msgs.msg import Quaternion
 from tf.transformations import euler_from_quaternion
 
-from .constants import M
+from .constants import M, Parameters
 from .support import _prepare_map
 
 
@@ -234,7 +234,7 @@ class AdmiralRosInterface(object):
                         num_drones, state_current, state_target,
                         convergence_steps, score, avg_score):
         curr_is, curr_js = self._extract_xy(state_current)
-        target_js, target_js = self._extract_xy(state_target)
+        target_is, target_js = self._extract_xy(state_target)
 
         ad_stat = AdmiralStatus()
         ad_stat.header.seq = self.seq
@@ -247,8 +247,8 @@ class AdmiralRosInterface(object):
         ad_stat.target_is = target_is
         ad_stat.target_js = target_js
 
-        ad_stat.i_coords = i_coords
-        ad_stat.j_coords = j_coords
+        # ad_stat.i_coords = i_coords
+        # ad_stat.j_coords = j_coords
         ad_stat.num_convergence_steps = convergence_steps
         ad_stat.score = score
         ad_stat.avg_score = avg_score

@@ -55,8 +55,9 @@ def rosmain():
         state_curr = state_target
 
         # we update score map taking into account current state (score at t0)
-        if not first:
-            reap_state_score(obs_map, state_curr, params.DRONE_SIGHT_RADIUS)
+        # if not first:
+        reap_state_score(obs_map, state_curr, params.DRONE_SIGHT_RADIUS)
+            # first = False
         # map is updated to next target time (scores of t0+T)
         score_generation_step(obs_map)
 

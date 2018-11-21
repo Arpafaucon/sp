@@ -3,8 +3,12 @@ Header header
 ## Convergence results
 uint8 num_drones
 # length = num_drones
-uint32[] i_coords
-uint32[] j_coords
+# current drone states
+int32[] current_is
+int32[] current_js
+# target drone state
+int32[] target_is
+int32[] target_js
 
 ## Convergence status
 uint32 num_convergence_steps

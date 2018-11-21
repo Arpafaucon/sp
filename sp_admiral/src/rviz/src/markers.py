@@ -7,24 +7,29 @@ from sp_msgs.msg import AdmiralOrders
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
 
+def extract_coords(orders, target=True):
+    if target:
+        return orders.target_xs, orders.target_ys
+    return orders.current_xs, orders.current_ys
+
 
 class AdmiralOrdersRviz(object):
     def __init__(self):
         rospy.init_node('admiral_rviz')
-        self.orders_viz_pub = rospy.Publisher('/sp/admiral_viz', Marker)
+        self.orders_viz_pub = rospy.Publisher('/sp/admiral_viz', Marker, queue_size=5)
         self.orders_sub = rospy.Subscriber(
-            '/sp/admiral_orders', AdmiralOrders, self._orders_callback)
+            '/sp/admiral_orders', AdmiralOrders, self._orders_callback, queue_size=5)
         self.sight_radius = rospy.get_param('/sp/admiral/obs_map/drone_sight_radius')
         self.seq = 0
 
         self.scale = Vector3()
         self.scale.x = self.scale.y = self.scale.z = 0.05
-        self.last_orders = None
+        # self.last_orders = None
 
-    def _pub_order(self, orders, isnew=True):
+    def _pub_order(self, orders, target=True):
         color = ColorRGBA()
         color.a = 1
-        if isnew:
+        if target:
             color.r = 1
             marker_id = 0
         else:
@@ -43,19 +48,21 @@ class AdmiralOrdersRviz(object):
         viz.color = color
         viz.scale = self.scale
 
+        x_coords, y_coords = extract_coords(orders, target=target)
+
         for i_drone in range(orders.num_drones):
             loc = Point()
-            loc.x = orders.x_coords[i_drone]
-            loc.y = orders.y_coords[i_drone]
+            loc.x = x_coords[i_drone]
+            loc.y = y_coords[i_drone]
             loc.z = 0
             viz.points.append(loc)
 
         self.orders_viz_pub.publish(viz)
 
-    def _pub_sight_areas(self, orders, isnew=True):
+    def _pub_sight_areas(self, orders, target=True):
         color = ColorRGBA()
         color.a = .5
-        if isnew:
+        if target:
             color.r = 1
             marker_id = 0
         else:
@@ -76,10 +83,12 @@ class AdmiralOrdersRviz(object):
         viz.scale.y = 2*orders.sight_radius
         viz.scale.z = 0.05
 
+        x_coords, y_coords = extract_coords(orders, target=target)
+
         for i_drone in range(orders.num_drones):
             loc = Point()
-            loc.x = orders.x_coords[i_drone]
-            loc.y = orders.y_coords[i_drone]
+            loc.x = x_coords[i_drone]
+            loc.y = y_coords[i_drone]
             loc.z = 0
             viz.points.append(loc)
 
@@ -89,13 +98,15 @@ class AdmiralOrdersRviz(object):
         # define common components
 
         # print orders
-        if self.last_orders:
-            self._pub_order(self.last_orders, isnew=False)
-            self._pub_sight_areas(self.last_orders, isnew=False)
-        self._pub_order(orders, isnew=True)
-        self._pub_sight_areas(orders, isnew=True)
+        # if self.last_orders:
+        #     self._pub_order(self.last_orders, target=False)
+        #     self._pub_sight_areas(self.last_orders, target=False)
+        self._pub_order(orders, target=True)
+        self._pub_order(orders, target=False)
+        self._pub_sight_areas(orders, target=True)
+        self._pub_sight_areas(orders, target=False)
         self.seq += 1
-        self.last_orders = orders
+        # self.last_orders = orders
         rospy.loginfo('published markers')
 
     def spin(self):
