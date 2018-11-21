@@ -1,0 +1,12 @@
+admiral:
+  num_drones: 4
+  # wall_radius, in m
+  wall_radius: 6
+  initial_temp: 100
+  n_iterations: 40
+  # sight radius, in m
+  drone_sight_radius: .3
+  # optimisation rate, in Hz
+  rate: .4
+captain:
+  dummy: True
