@@ -103,7 +103,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES sp_admiral
-#  CATKIN_DEPENDS rospy
+#  CATKIN_DEPENDS sp_core
 #  DEPENDS system_lib
 )
 

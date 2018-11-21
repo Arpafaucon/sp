@@ -4,7 +4,7 @@ import rospy
 
 from std_msgs.msg import ColorRGBA
 from visualization_msgs.msg import Marker
-from sp_msgs.msg import CaptainStatus
+from sp_core.msg import CaptainStatus
 from geometry_msgs.msg import Vector3, Point
 
 # target is red
@@ -17,12 +17,12 @@ class CaptainViz(object):
         self.viz_pub = rospy.Publisher('/sp/captain_viz', Marker, queue_size=QUEUE_SIZE)
         rospy.Subscriber('/sp/captain_status', CaptainStatus, self._status_callback)
         self.seq = 0
-        self.scale = Vector3()
-        self.scale.x = .3
+        self.scale = Vector3()  
+        self.scale.x = .05
         self.curr_color = ColorRGBA()
-        self.curr_color.g = self.curr_color.a = 1
+        self.curr_color.g = self.curr_color.a = 0.9
         self.target_color = ColorRGBA()
-        self.target_color.r = self.target_color.a = 1
+        self.target_color.r = self.target_color.a = .9
         
 
     def _status_callback(self, status):
@@ -44,9 +44,15 @@ class CaptainViz(object):
             p_target = Point()
             p_target.x = status.target_xs[i_d]
             p_target.y = status.target_ys[i_d]
-            status.points.extend([p_curr, p_target])
-            status.color.extend([self.curr_color, self.target_color])
+            viz.points.extend([p_curr, p_target])
+            viz.colors.extend([self.curr_color, self.target_color])
+        self.viz_pub.publish(viz)
+        rospy.loginfo('Captain: published markers')
 
 def rosmain():
     cviz = CaptainViz()
     rospy.spin()
+
+if __name__ == "__main__":
+    rosmain()
+

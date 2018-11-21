@@ -1,4 +1,0 @@
-<launch>
-    <arg name="map_path" value="/home/arpad/dev/sp/rosws/src/sp/test_map/1/map1.yaml"/>
-    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)"/>
-</launch>

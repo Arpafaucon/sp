@@ -7,7 +7,7 @@ import rospy
 import numpy as np
 
 from nav_msgs.msg import OccupancyGrid
-from sp_msgs.msg import AdmiralStatus, AdmiralOrders
+from sp_core.msg import AdmiralStatus, AdmiralOrders
 # from geometry_msgs.msg import Quaternion
 from tf.transformations import euler_from_quaternion
 
@@ -104,7 +104,7 @@ class AdmiralRosInterface(object):
             absolute_ns = rospy.get_param("~namespace")
         except KeyError as _:
             absolute_ns = DEFAULT_PARAM_NS
-        rno = absolute_ns + "/obs_map/"
+        rno = absolute_ns + "/"
         num_drones = rospy.get_param(rno+'num_drones')
         wall_radius = rospy.get_param(rno+'wall_radius')
         initial_temp = rospy.get_param(rno+'initial_temp')
@@ -203,6 +203,7 @@ class AdmiralRosInterface(object):
         orders.header.seq = self.seq
         orders.num_drones = self.params.NUM_DRONES
         orders.sight_radius = self.params.DRONE_SIGHT_RADIUS * self.map_info.resolution
+        orders.period = 1./self.params.RATE
 
         orders.current_xs = current_xs
         orders.current_ys = current_ys
