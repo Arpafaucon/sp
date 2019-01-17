@@ -33,19 +33,19 @@ def disp_image(im_array, mode='HSV', scale=20):
     enlarged.show()
 
 
-def create_observation_map(map_filename, wall_radius=4, time_bonus=1):
+def create_observation_map(map_filename, wall_radius, score_increment):
     floorplan = Image.open(map_filename)
     dynamic_map = floorplan.convert("RGB").convert("HSV")
     obs_map = np.array(dynamic_map)
     obs_map[:, :, M_CONST] = 32
     print(obs_map.shape)
-    _prepare_map(obs_map, wall_radius)
+    _prepare_map(obs_map, wall_radius, score_increment)
     return obs_map
 
 
-def _prepare_map(observation_map, wall_radius):
+def _prepare_map(observation_map, wall_radius, score_increment):
     inflate_walls(observation_map, wall_radius)
-    score_generation_step(observation_map)
+    score_generation_step(observation_map, score_increment)
     # return observation_map
 
 
@@ -172,19 +172,19 @@ def inflate_walls(observation_array, wall_radius):
                 inflate_cell(observation_array, (i, j), wall_radius)
 
 
-def update_cell_score(cell_tuple):
-    if cell_tuple[M_PHY] > SCOREABLE_PHY_FLOOR and cell_tuple[M.SCORE] < MAX_SCORE - SCORE_STEP_INCREMENT:
-        cell_tuple[M_SCORE] += SCORE_STEP_INCREMENT
-        return SCORE_STEP_INCREMENT
+def update_cell_score(cell_tuple, score_increment):
+    if cell_tuple[M_PHY] > SCOREABLE_PHY_FLOOR and cell_tuple[M.SCORE] < MAX_SCORE - score_increment:
+        cell_tuple[M_SCORE] += score_increment
+        return score_increment
     return 0
 
 
-def score_generation_step(observation_array):
+def score_generation_step(observation_array, score_increment):
     h, w, _ = observation_array.shape
     total = 0
     for i in range(h):
         for j in range(w):
-            total += update_cell_score(observation_array[i, j])
+            total += update_cell_score(observation_array[i, j], score_increment)
     return total
 
 

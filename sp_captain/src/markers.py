@@ -14,7 +14,7 @@ QUEUE_SIZE = 2
 class CaptainViz(object):
     def __init__(self):
         rospy.init_node('captain_viz')
-        self.viz_pub = rospy.Publisher('/sp/captain_viz', Marker, queue_size=QUEUE_SIZE)
+        self.viz_pub = rospy.Publisher('M/sp/captain_viz', Marker, queue_size=QUEUE_SIZE)
         rospy.Subscriber('/sp/captain_status', CaptainStatus, self._status_callback)
         self.seq = 0
         self.scale = Vector3()  

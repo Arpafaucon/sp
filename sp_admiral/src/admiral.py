@@ -59,7 +59,7 @@ def rosmain():
         reap_state_score(obs_map, state_curr, params.DRONE_SIGHT_RADIUS)
             # first = False
         # map is updated to next target time (scores of t0+T)
-        score_generation_step(obs_map)
+        score_generation_step(obs_map, params.SCORE_STEP_INCREMENT)
 
         # run optimisation to find target for t0+T
         state_target, score_target, temp = optim.simul_annealing_simple(

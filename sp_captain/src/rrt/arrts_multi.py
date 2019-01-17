@@ -5,7 +5,8 @@ original author: AtsushiSakai(@Atsushi_twi)
 
 modified for SP context
 - mapping environnment is 0->width;0->height : coordinates transform is done afterwards
-- obstacles don't exist as such : they're full cells in occupancy[height][width], where occupancy[i][j] refers to the point (origin.x + j*resolution, origin.y + i*resolution)
+- each cell is of size 1x1
+- obstacles don't exist as such : they're full cells in occupancy[height][width], where occupancy[i][j] refers to the point (j, i)
 - 
 """
 
@@ -19,11 +20,11 @@ import time
 # dev
 from PIL import Image
 
-# above this value the cell is considered full, therefore not travelable to
+# above this value (0-100) the cell is considered full, therefore not travelable to
 WALL_THRESHOLD = 50
 TREE_COLORS = ['green', 'blue', 'gold', 'crimson', 'lime', 'purple', 'darkorange', 'saddlebrown', 'indigo', 'coral']
 NUM_TREE_COLORS = len(TREE_COLORS)
-show_animation =  True
+show_animation =  not True
 
 
 class RRTPath:
@@ -34,13 +35,15 @@ class RRTPath:
         self.path = path
         self.valid = valid
 
+        
+
 
 class RRT():
     """
     Class for RRT Planning
     """
 
-    def __init__(self, num_trees, starts, goals, randArea, resolution, occupancyGrid,
+    def __init__(self, num_trees, starts, goals, occupancyGrid,
                  expandDis=0.5, goalSampleRate=20, maxIter=500):
         """
         Setting Parameter
@@ -61,25 +64,34 @@ class RRT():
             self.ends.append(Node(goal[0], goal[1]))
         # self.start = Node(start[0], start[1])
         # self.end = Node(goal[0], goal[1])
-        self.minrand_x = 0
-        self.maxrand_x = randArea[0]
-        self.minrand_y = 0
-        self.maxrand_y = randArea[1]
         self.expandDis = expandDis
         # self.goalSampleRate = goalSampleRate
         self.maxIter = maxIter
         self.occupancy_grid = occupancyGrid
-        self.resolution = resolution
+
+        height, width = occupancyGrid.shape
+        self.maxrand_x = width
+        self.maxrand_y = height
+        self.minrand_x = 0
+        # self.maxrand_x = randArea[0]
+        self.minrand_y = 0
+        # self.maxrand_y = randArea[1]
+        # self.resolution = resolution
 
         self.sample_rate_goal = goalSampleRate / 100.
 
-    def Planning(self, animation=True):
-        """
-        Pathplanning
+        self.last_tick_time = None
 
-        animation: flag for animation on or off
+    def Planning(self, animation):
         """
+        Main path planning procedure
 
+        Args:
+            animation (bool, optional): Defaults to True. Animate search with matplotlib
+        
+        Returns:
+            (bool, list[RRTResults], float, list[int]): ok, final_assign, final_min_cost, final_permutation
+        """
         self.nodeList_all = [[self.starts[i]] for i in range(self.num_trees)]
 
         for i in range(self.maxIter):
@@ -90,14 +102,22 @@ class RRT():
                 newNode = self.steer(i_tree, rnd, nind)
                 #  print(newNode.cost)
 
-                if self.__CollisionCheck(newNode):
+                if self.__CollisionCheck(newNode.x, newNode.y):
                     nearinds = self.find_near_nodes(newNode, i_tree)
                     newNode = self.choose_parent(newNode, i_tree, nearinds)
                     self.nodeList_all[i_tree].append(newNode)
                     self.rewire(newNode, nearinds, i_tree)
+            
+            if i % 20 == 0:
+                curr_time = time.time()
+                duration = ''
+                if self.last_tick_time is not None:
+                    duration = curr_time - self.last_tick_time
+                self.last_tick_time = curr_time
+                print("{} \t  {}".format(i, duration))
 
-            if animation and i % 20 == 0:
-                self.DrawGraph(rnd)
+                if animation:
+                    self.DrawGraph(rnd)
 
         # return paths for every start-dest couple
         rrt_paths_mat = [[None for i in range(self.num_trees)] for j in range(self.num_trees)]
@@ -108,13 +128,14 @@ class RRT():
                     # path not found
                     rrt_path = RRTPath(i_start, i_end, 0, None, valid=False)
                 else:
-                    cost = self.nodeList_all[i_start][lastIndex].cost
-                    path = self.gen_final_course(lastIndex, i_start, i_end)
+                    # cost = self.nodeList_all[i_start][lastIndex].cost
+                    path, cost = self.gen_final_course(lastIndex, i_start, i_end)
                     rrt_path = RRTPath(i_start, i_end, cost=cost, path=path)
                 rrt_paths_mat[i_start][i_end] = rrt_path
 
-        final_assign, min_cost, perm = self._assign_paths(rrt_paths_mat)
-        return final_assign
+        assign_success, final_assign, min_cost, perm = self._assign_paths(rrt_paths_mat)
+        return assign_success, final_assign, min_cost, perm
+        
         # # generate coruse
         # lastIndex = self.get_best_last_index()
         # if lastIndex is None:
@@ -200,13 +221,19 @@ class RRT():
 
     def gen_final_course(self, goalind, i_tree, i_goal):
         nodeList = self.nodeList_all[i_tree]
+        last_node = nodeList[goalind]
+        last_step_cost = self.calc_dist_to_goal(last_node.x, last_node.y, i_goal)
+        total_cost = last_node.cost + last_step_cost
+
         path = [[self.ends[i_goal].x, self.ends[i_goal].y]]
         while nodeList[goalind].parent is not None:
             node = nodeList[goalind]
             path.append([node.x, node.y])
             goalind = node.parent
         path.append([self.starts[i_tree].x, self.starts[i_tree].y])
-        return path
+
+        ordered_path = path[::-1]
+        return ordered_path, total_cost
 
     def calc_dist_to_goal(self, x, y, goal_index):
         return np.linalg.norm([x - self.ends[goal_index].x, y - self.ends[goal_index].y])
@@ -241,14 +268,19 @@ class RRT():
 
     def check_collision_extend(self, nearNode, theta, d):
 
-        tmpNode = copy.deepcopy(nearNode)
+        # we only care about x and y
+        # tmpNode = copy.copy(nearNode)
+        node_x = nearNode.x
+        node_y = nearNode.y
+        # tmpNode = Node(nearNode.x, nearNode.y)
+        expand_x = self.expandDis * math.cos(theta)
+        expand_y = self.expandDis * math.sin(theta)
 
-        for i in range(int(d / self.expandDis)):
-            tmpNode.x += self.expandDis * math.cos(theta)
-            tmpNode.y += self.expandDis * math.sin(theta)
-            if not self.__CollisionCheck(tmpNode):
+        for _ in range(int(d / self.expandDis)):
+            node_x += expand_x
+            node_y += expand_y
+            if not self.__CollisionCheck(node_x, node_y):
                 return False
-
         return True
 
     def DrawGraph(self, rnd=None):
@@ -274,8 +306,7 @@ class RRT():
             plt.plot(self.starts[i_tree].x, self.starts[i_tree].y, "xr")
             plt.plot(self.ends[i_tree].x, self.ends[i_tree].y, "xr")
 
-        plt.axis([-self.resolution, self.maxrand_x+self.resolution, -
-                  self.resolution, self.maxrand_y+self.resolution])
+        plt.axis([-1, self.maxrand_x+1, -1, self.maxrand_y+1])
         plt.grid(True)
         plt.pause(0.01)
 
@@ -286,12 +317,17 @@ class RRT():
 
         return minind
 
-    def __CollisionCheck(self, node):
-        cell_i, cell_j = self._get_map_indices(node.x, node.y)
+    def __CollisionCheck(self, node_x, node_y):
+        # inlining to improve perfs
+        cell_i = int(node_y)
+        cell_j = int(node_x)
+        # cell_i, cell_j = self._get_map_indices(node_x, node_y)
+
         cost = self.occupancy_grid[cell_i, cell_j]
-        if cost > WALL_THRESHOLD:
-            return False
-        return True
+        # if cost > WALL_THRESHOLD:
+        #     return False
+        # return True
+        return cost < WALL_THRESHOLD
         # for (ox, oy, size) in obstacleList:
         #     dx = ox - node.x
         #     dy = oy - node.y
@@ -301,11 +337,25 @@ class RRT():
         # return True  # safe
 
     def _get_map_indices(self, x_target, y_target):
-        xc_target = int(x_target / self.resolution)
-        yc_target = int(y_target / self.resolution)
+        xc_target = int(x_target)
+        yc_target = int(y_target)
         return (yc_target, xc_target)
 
     def _assign_paths(self, rrt_paths_mat):
+        """
+        Given the distance matrix, compute the best goal assignment
+
+        
+        Args:
+            rrt_paths_mat (list[list[RRTPath]]): [description]
+        
+        Returns:
+            (bool, list[RRTPath], float, list[int]): success, chosen_paths, total_cost, final_permutation
+
+        Note:
+            - chosen_paths are returned in order of i_start
+            - final_permutation is a list giving the i_end assigned to each start : perm[i_start] = i_end
+        """
         cost_matrix = np.full((self.num_trees, self.num_trees), fill_value=np.inf)
         for i_start in range(self.num_trees):
             for i_end in range(self.num_trees):
@@ -327,12 +377,14 @@ class RRT():
                 min_cost = cost
                 min_perm = perm
         
+        if min_cost == np.inf :
+            return False, None, None, None
         final_assign = []
         for i_start in range(self.num_trees):
             assigned_goal = min_perm[i_start]
             final_assign.append(rrt_paths_mat[i_start][assigned_goal])
         
-        return (final_assign, min_cost, min_perm)
+        return (True, final_assign, min_cost, min_perm)
 
 
 
@@ -351,27 +403,27 @@ class Node():
 
 def test_image(filepath):
 
-    def check_obstacle(ogrid, x_orig, y_orig, resolution, x_target, y_target):
+    def check_obstacle(ogrid, x_orig, y_orig, x_target, y_target):
         height_cells, width_cells = np.shape(ogrid)
-        y_max = y_orig + height_cells*resolution
-        x_max = x_orig + width_cells*resolution
-        xc_target = int((x_target - x_orig - 0*resolution/2) / resolution)
-        yc_target = int((y_target - y_orig - 0*resolution/2) / resolution)
+        y_max = y_orig + height_cells
+        x_max = x_orig + width_cells
+        xc_target = int(x_target - x_orig) 
+        yc_target = int(y_target - y_orig) 
         cost = ogrid[yc_target, xc_target]
         return cost > 50
 
-    map_array, origin_x, origin_y, upperright_x, upperright_y, resolution = load_image(
+    map_array, upperright_x, upperright_y = load_image(
         filepath)
 
     plt.imshow(map_array, cmap='binary', origin='lower',
-               extent=(origin_x, upperright_x, origin_y, upperright_y))
+               extent=(0, upperright_x, 0, upperright_y))
 
     # check_obstacle()
     for _ in range(600):
-        xt = random.uniform(origin_x, upperright_x)
-        yt = random.uniform(origin_y, upperright_y)
-        obst = check_obstacle(map_array, origin_x,
-                              origin_y, resolution, xt, yt)
+        xt = random.uniform(0, upperright_x)
+        yt = random.uniform(0, upperright_y)
+        obst = check_obstacle(map_array, 0,
+                              0, xt, yt)
         color = 'r' if obst else 'g'
         plt.plot([xt], [yt], color + '+')
 
@@ -382,10 +434,10 @@ def load_image(filepath):
     floorplan = Image.open(filepath)
     map_array = 100./256 * (256 - np.array(floorplan)[::-1])
     height_cells, width_cells = np.shape(map_array)
-    resolution = .1
-    upperright_x = width_cells*resolution
-    upperright_y = height_cells*resolution
-    return (map_array, 0, 0, upperright_x, upperright_y, resolution)
+    # resolution = .1
+    upperright_x = width_cells
+    upperright_y = height_cells
+    return (map_array, upperright_x, upperright_y)
 
 
 # def main():
@@ -422,17 +474,16 @@ def load_image(filepath):
 
 def main2():
     filepath = "/home/arpad/dev/sp/rosws/src/sp/sp_core/maps/map2.pgm"
-    map_array, origin_x, origin_y, upperright_x, upperright_y, resolution = load_image(
+    map_array, upperright_x, upperright_y = load_image(
         filepath)
-    starts = [[.5, .5], [1.5, .5], [2.5, 1]]
-    ends = [[.5, 1], [1.5, 1], [2.5, .75]]
-    rrt = RRT(num_trees=3, starts=starts, goals=ends, randArea=[
-              upperright_x, upperright_y], resolution=resolution, occupancyGrid=map_array, expandDis=.5*resolution, maxIter=200)
+    starts = [[5, 5], [15, 5], [25, 10], [3,3], [10,10]]
+    ends = [[5, 10], [15, 10], [25, 7.5], [20,15], [20,20]]
+    rrt = RRT(num_trees=5, starts=starts, goals=ends, occupancyGrid=map_array, expandDis=.75, maxIter=400)
     start_time = time.time()
-    rrt_results = rrt.Planning(animation=show_animation)
+    assign_ok, rrt_results, min_cost, perm = rrt.Planning(animation=show_animation)
     end_time = time.time()
     print('process took {} sec'.format(end_time-start_time))
-    if rrt_results is None:
+    if not assign_ok:
         print("Cannot find path")
     else:
         print("found path!!")
@@ -452,4 +503,8 @@ def main2():
 
 if __name__ == '__main__':
     # test_image("/home/arpad/dev/sp/rosws/src/sp/sp_core/maps/map2.pgm")
-    main2()
+    # main2()
+    import cProfile
+    show_animation = False
+    cProfile.run('main2()', sort='tottime')
+    # profile.run('main2()')

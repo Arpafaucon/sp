@@ -19,7 +19,7 @@ class AdmiralOrdersRviz(object):
         self.orders_viz_pub = rospy.Publisher('/sp/admiral_viz', Marker, queue_size=5)
         self.orders_sub = rospy.Subscriber(
             '/sp/admiral_orders', AdmiralOrders, self._orders_callback, queue_size=5)
-        self.sight_radius = rospy.get_param('/sp/admiral/obs_map/drone_sight_radius')
+        self.sight_radius = rospy.get_param('/sp/admiral/drone_sight_radius')
         self.seq = 0
 
         self.scale = Vector3()
@@ -58,6 +58,30 @@ class AdmiralOrdersRviz(object):
             viz.points.append(loc)
 
         self.orders_viz_pub.publish(viz)
+
+    def _pub_drone_ids(self, orders):
+        color = ColorRGBA()
+        color.a = color.r = color.g = color.b = 1
+
+        viz = Marker()
+        viz.header.stamp = rospy.Time()
+        viz.header.seq = self.seq
+        viz.header.frame_id = '/map'
+
+        viz.action = viz.MODIFY
+        viz.ns = 'drone_ids'
+        viz.type = viz.TEXT_VIEW_FACING
+        viz.color = color
+        viz.scale.z = .1
+
+        x_coords, y_coords = extract_coords(orders, target=False)
+        for i_drone in range(orders.num_drones):
+            viz.id = i_drone
+            viz.text = str(i_drone)
+            viz.pose.position.x = x_coords[i_drone]
+            viz.pose.position.y = y_coords[i_drone]
+            # viz.pose.position.z = 0
+            self.orders_viz_pub.publish(viz)
 
     def _pub_sight_areas(self, orders, target=True):
         color = ColorRGBA()
@@ -105,6 +129,7 @@ class AdmiralOrdersRviz(object):
         self._pub_order(orders, target=False)
         self._pub_sight_areas(orders, target=True)
         self._pub_sight_areas(orders, target=False)
+        self._pub_drone_ids(orders)
         self.seq += 1
         # self.last_orders = orders
         rospy.loginfo('published markers')

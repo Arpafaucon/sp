@@ -1,6 +1,6 @@
 <launch>
-  <include file="$(find sp_core)/launch/load_map.launch"/>
-  <include file="$(find sp_core)/launch/load_params.launch"/>
+  <!-- <include file="$(find sp_core)/launch/load_map.launch"/>
+  <include file="$(find sp_core)/launch/load_params.launch"/> -->
   <include file="$(find sp_admiral)/launch/viz.launch"/>
 
   <node name="admiral" pkg="sp_admiral" type="admiral.py" ns="/sp" output="screen" required="True">

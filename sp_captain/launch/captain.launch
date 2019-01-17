@@ -1,4 +1,0 @@
-<launch>
-    <node name="captain_node", pkg="sp_captain" type="captain.py" ns="ns"/>
-    <node name="captain_viz", pkg="sp_captain" type="markers.py" ns="ns"/>
-</launch>

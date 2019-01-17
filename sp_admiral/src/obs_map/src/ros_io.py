@@ -68,7 +68,7 @@ class AdmiralRosInterface(object):
         assert load_ok, "map should be correctly loaded"
 
         self._load_refined_params(self.map_info.resolution)
-        _prepare_map(obs_map, self.params.WALL_RADIUS)
+        _prepare_map(obs_map, self.params.WALL_RADIUS, self.params.SCORE_STEP_INCREMENT)
         return (obs_map, self.get_params())
 
     def _load_map_ros(self, timeout=4):
@@ -110,9 +110,10 @@ class AdmiralRosInterface(object):
         initial_temp = rospy.get_param(rno+'initial_temp')
         n_iterations = rospy.get_param(rno+'n_iterations')
         drone_sight_radius = rospy.get_param(rno+'drone_sight_radius')
+        score_step_increment = rospy.get_param(rno + 'score_step_increment')
         rate = rospy.get_param(rno+'rate')
         params = Parameters(num_drones, wall_radius, initial_temp,
-                            n_iterations, drone_sight_radius, rate)
+                            n_iterations, drone_sight_radius, rate, score_step_increment)
         rospy.loginfo('loaded raw params : {}'.format(params))
         self._raw_params = params
 
@@ -121,9 +122,11 @@ class AdmiralRosInterface(object):
         wall_radius = int(math.ceil(raw_p.WALL_RADIUS/resolution))
         drone_sight_radius = int(math.floor(
             raw_p.DRONE_SIGHT_RADIUS/resolution))
+        
         refined_params = Parameters(
             raw_p.NUM_DRONES, wall_radius, raw_p.INITIAL_TEMP,
-            raw_p.N_ITERATIONS, drone_sight_radius, raw_p.RATE)
+            raw_p.N_ITERATIONS, drone_sight_radius, raw_p.RATE, raw_p.SCORE_STEP_INCREMENT)
+        rospy.loginfo('refined params : {}'.format(refined_params))
         self.params = refined_params
 
     def get_params(self):

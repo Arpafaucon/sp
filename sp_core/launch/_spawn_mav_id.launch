@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!-- this simplified version creates standardised spawned drones -->
+<launch>
+    <arg name="mav_id" doc="integer id of the spawned drone."/>
+    <arg name="color_prop_front" default="Blue" />
+
+    <arg name="x" value="$(eval 0.2 * arg('mav_id') )"/>
+    <arg name="uri" value="$(eval 'INADDR_ANY://' + str(19950 + arg('mav_id')))"/>
+    <arg name="tf_prefix" value="cf$(arg mav_id)"/>
+
+    <include file="$(find crazyflie_gazebo)/launch/spawn_mav.launch" ns="$(arg tf_prefix)">
+        <arg name="x" value="$(arg x)"/>
+        <!-- <arg name="mav_name" value="crazyflie_$(arg mav_id)"/> -->
+        <arg name="uri" value="$(arg uri)"/>
+        <arg name="color_prop_back" value="White" />
+        <arg name="color_prop_front" value="$(arg color_prop_front)" />
+        <arg name="tf_prefix" value="$(arg tf_prefix)"/>
+    </include>
+
+</launch>
+ 

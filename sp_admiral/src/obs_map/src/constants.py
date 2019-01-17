@@ -21,7 +21,7 @@ M = _enum(CONST=0,
 PHY_WALL_THRES = 5
 
 SCOREABLE_PHY_FLOOR = 1
-SCORE_STEP_INCREMENT = 4
+# SCORE_STEP_INCREMENT = 4
 MAX_SCORE = 255
 
 # DRONE_SIGHT_RADIUS = 3
@@ -32,7 +32,8 @@ Parameters = namedtuple('AdmiralParameters', [
                         'INITIAL_TEMP',
                         'N_ITERATIONS',
                         'DRONE_SIGHT_RADIUS',
-                        'RATE'
+                        'RATE',
+                        'SCORE_STEP_INCREMENT'
                         ])
 
 DISP_SCALE = 25
