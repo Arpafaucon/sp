@@ -1,0 +1,25 @@
+Header header
+
+int8 num_drones_connected
+int8 num_drones_active
+
+int8 STATUS_OFF = 0
+int8 STATUS_READY = 1
+int8 STATUS_ACTIVE = 2
+
+# ------------------
+# size is `num_drones_connected`. 
+
+# Indicates if connected drone is real or simulated
+bool[] connected_drones_isreal
+# Each cell describes current status of connected drone
+int8[] connected_drones_status
+# Maps connected drone to an active ID, or -1 if drone is not active
+int8[] connected_drones_active_ids
+# TODO : add info on HW address or simulation port
+
+# ------------------
+# size is `num_drones_active`. 
+
+# ROS and TF namespace for each active drone
+string[] active_drones_namespaces

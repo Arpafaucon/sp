@@ -51,6 +51,8 @@ add_message_files(
   AdmiralStatus.msg
   AdmiralOrders.msg
   CaptainOrders.msg
+  SwarmAllocation.msg
+  SwarmPosition.msg
 )
 
 ## Generate services in the 'srv' folder
