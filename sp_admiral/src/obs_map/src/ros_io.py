@@ -7,9 +7,10 @@ import rospy
 import numpy as np
 
 from nav_msgs.msg import OccupancyGrid
-from sp_core.msg import AdmiralStatus, AdmiralOrders
+from sp_core.msg import AdmiralStatus, AdmiralOrders, SwarmPosition
 # from geometry_msgs.msg import Quaternion
 from tf.transformations import euler_from_quaternion
+
 
 from .constants import M, Parameters
 from .support import _prepare_map
@@ -21,6 +22,7 @@ NODE_NAME = "admiral_node"
 STATUS_TOPIC = "admiral_status"
 SCORE_TOPIC = "admiral_score"
 ORDERS_TOPIC = "admiral_orders"
+SWARM_POSITION_TOPIC = "swarm_position"
 
 MAP_ROOT_NS = ''
 
@@ -105,14 +107,16 @@ class AdmiralRosInterface(object):
         except KeyError as _:
             absolute_ns = DEFAULT_PARAM_NS
         rno = absolute_ns + "/"
-        num_drones = rospy.get_param(rno+'num_drones')
+        # num_drones = rospy.get_param(rno+'num_drones')
         wall_radius = rospy.get_param(rno+'wall_radius')
         initial_temp = rospy.get_param(rno+'initial_temp')
         n_iterations = rospy.get_param(rno+'n_iterations')
         drone_sight_radius = rospy.get_param(rno+'drone_sight_radius')
         score_step_increment = rospy.get_param(rno + 'score_step_increment')
         rate = rospy.get_param(rno+'rate')
-        params = Parameters(num_drones, wall_radius, initial_temp,
+        params = Parameters(
+            # num_drones, 
+            wall_radius, initial_temp,
                             n_iterations, drone_sight_radius, rate, score_step_increment)
         rospy.loginfo('loaded raw params : {}'.format(params))
         self._raw_params = params
@@ -124,7 +128,8 @@ class AdmiralRosInterface(object):
             raw_p.DRONE_SIGHT_RADIUS/resolution))
         
         refined_params = Parameters(
-            raw_p.NUM_DRONES, wall_radius, raw_p.INITIAL_TEMP,
+            # raw_p.NUM_DRONES, 
+            wall_radius, raw_p.INITIAL_TEMP,
             raw_p.N_ITERATIONS, drone_sight_radius, raw_p.RATE, raw_p.SCORE_STEP_INCREMENT)
         rospy.loginfo('refined params : {}'.format(refined_params))
         self.params = refined_params
@@ -147,6 +152,42 @@ class AdmiralRosInterface(object):
                 "and converted after ROS map was loaded")
         return self.params
 
+    def _tf_grid2world(self, drone_i, drone_j):
+        ori = self.map_info.origin.orientation
+        pos = self.map_info.origin.position
+        explicit_quat = [ori.x, ori.y, ori.z, ori.w]
+        yaw = euler_from_quaternion(explicit_quat)[2]
+        cos_yaw = math.cos(yaw)
+        sin_yaw = math.sin(yaw)
+
+        flat_x = (drone_j+.5) * self.map_info.resolution
+        flat_y = (self.map_info.height - drone_i - .5) * \
+            self.map_info.resolution
+        drone_x = pos.x + flat_x * cos_yaw - flat_y * sin_yaw
+        drone_y = pos.y + flat_x * sin_yaw + flat_y * cos_yaw
+        return drone_x, drone_y
+
+    def _tf_world2grid(self, drone_x, drone_y):
+        # precalculus
+        ori = self.map_info.origin.orientation
+        pos = self.map_info.origin.position
+        explicit_quat = [ori.x, ori.y, ori.z, ori.w]
+        yaw = euler_from_quaternion(explicit_quat)[2]
+        cos_yaw = math.cos(yaw)
+        sin_yaw = math.sin(yaw)
+        # same lower left corner than grid
+        shifted_x = drone_x - pos.x
+        shifted_y = drone_y - pos.y
+        # same tilting as grid
+        grid_x = shifted_x * cos_yaw + shifted_y * sin_yaw
+        grid_y = shifted_x * sin_yaw + shifted_y * cos_yaw
+        # grid 
+        grid_i = int(self.map_info.height - 0.5 - grid_y/ self.map_info.resolution)
+        grid_j = int(grid_x / self.map_info.resolution - .5)
+
+        return grid_i, grid_j
+
+
     def _transform_coordinates(self, state):
         ori = self.map_info.origin.orientation
         pos = self.map_info.origin.position
@@ -155,17 +196,18 @@ class AdmiralRosInterface(object):
         cos_yaw = math.cos(yaw)
         sin_yaw = math.sin(yaw)
 
-        def _transform_drones(drone_i, drone_j):
+        def _tf_grid2world(drone_i, drone_j):
             flat_x = (drone_j+.5) * self.map_info.resolution
             flat_y = (self.map_info.height - drone_i - .5) * \
                 self.map_info.resolution
             drone_x = pos.x + flat_x * cos_yaw - flat_y * sin_yaw
             drone_y = pos.y + flat_x * sin_yaw + flat_y * cos_yaw
             return drone_x, drone_y
+
         list_x = []
         list_y = []
         for drone_coords in state:
-            drx, dry = _transform_drones(*drone_coords)
+            drx, dry = _tf_grid2world(*drone_coords)
             list_x.append(drx)
             list_y.append(dry)
         return list_x, list_y
@@ -204,7 +246,7 @@ class AdmiralRosInterface(object):
         orders = AdmiralOrders()
         orders.header.stamp = rospy.Time.now()
         orders.header.seq = self.seq
-        orders.num_drones = self.params.NUM_DRONES
+        # orders.num_drones = self.params.NUM_DRONES
         orders.sight_radius = self.params.DRONE_SIGHT_RADIUS * self.map_info.resolution
         orders.period = 1./self.params.RATE
 
@@ -228,6 +270,21 @@ class AdmiralRosInterface(object):
 
         grid.data = score_list
         self.score_pub.publish(grid)
+
+    def get_drone_positions(self):
+        swpos_msg = rospy.wait_for_message("/sp/" + SWARM_POSITION_TOPIC, SwarmPosition)
+        x = swpos_msg.x
+        y = swpos_msg.y
+        rospy.loginfo( "got position on world : {}".format(list(zip(x, y))))
+        num_drones = swpos_msg.num_drones_active
+        state = []
+        for i_drone in range(num_drones):
+            x_drone, y_drone = x[i_drone], y[i_drone]
+            i_drone, j_drone = self._tf_world2grid(x_drone, y_drone)
+            rospy.loginfo("tf {} {} -> {} {}".format(x_drone, y_drone, i_drone, j_drone))
+            state.append( (i_drone, j_drone) )
+        rospy.loginfo( "got position on grid : {}".format(state))
+        return state, num_drones
 
     @staticmethod
     def _extract_xy(state):

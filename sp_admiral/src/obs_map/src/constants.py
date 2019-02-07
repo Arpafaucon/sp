@@ -27,7 +27,7 @@ MAX_SCORE = 255
 # DRONE_SIGHT_RADIUS = 3
 
 Parameters = namedtuple('AdmiralParameters', [
-                        'NUM_DRONES',
+                        # 'NUM_DRONES',
                         'WALL_RADIUS',
                         'INITIAL_TEMP',
                         'N_ITERATIONS',

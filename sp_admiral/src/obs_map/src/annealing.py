@@ -33,7 +33,10 @@ class SimulAnnealingOptimisation(object):
         self.map_dimensions = observation_map.shape
         self.interface = interface
         self.params = params
-        self.num_drones = params.NUM_DRONES
+        self.num_drones = None
+
+    def set_num_drones(self, num_drones):
+        self.num_drones = num_drones
 
     def _get_drone_coordinates(self, state, drone_index):
         return state[drone_index]

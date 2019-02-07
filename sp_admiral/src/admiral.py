@@ -45,14 +45,18 @@ def rosmain():
     optim = SimulAnnealingOptimisation(
         obs_map, params)
 
-    state_target = optim.init_pos_drones(None)
+    state_measured, num_drones = ros_if.get_drone_positions()
+    optim.set_num_drones(num_drones)
+
+    state_target = optim.init_pos_drones(state_measured)
     state_curr = state_target
 
     while not done and not rospy.is_shutdown():
         # get current drone state
         # that would be the point where we update the number of drones as well
         # here : simplified : current state is last target state
-        state_curr = state_target
+        state_curr, num_drones = ros_if.get_drone_positions()
+
 
         # we update score map taking into account current state (score at t0)
         # if not first:
@@ -67,7 +71,7 @@ def rosmain():
         rospy.loginfo('converged with score {}'.format(score_target))
 
         # publish target
-        ros_if.publish_msgs(obs_map, state_curr, state_target, params.NUM_DRONES,
+        ros_if.publish_msgs(obs_map, state_curr, state_target, num_drones,
                             params.N_ITERATIONS, score_target, score_target)
 
         # ... and sleep until t0+T
