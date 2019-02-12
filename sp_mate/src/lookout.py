@@ -5,6 +5,7 @@ Lookout node
 
 import rospy
 from sp_core.msg import SwarmAllocation, SwarmPosition
+from sp_mate.srv import DroneLocation, DroneLocationRequest, DroneLocationResponse
 from crazyflie_driver.msg import GenericLogData
 
 
@@ -20,6 +21,16 @@ class Lookout:
         # Position publisher
         self.swarm_pos_pub = rospy.Publisher('/sp/swarm_position', SwarmPosition, queue_size=10)
         self.swarm_pos_seq = 0
+
+        # position service
+        self.drone_pos_srv = rospy.Service("/sp/drone_position", DroneLocation, self._srv_drone_location)
+
+    
+    def _srv_drone_location(self, req):
+        x, y, z = self._get_drone_pos(req.active_id)
+        res = DroneLocationResponse()
+        res.position = [x, y, z]
+        return res
 
 
     def _cb_swarm_alloc(self, msg):
