@@ -16,8 +16,13 @@ mate:
     "0xE7E7E7E4",
   ]
   # OPERATIVE PARAMETERS
+  # control loop rate, Hz
+  rate: 2
   # flight altitude, m
   altitude : 1
+  # tolerance radius around goals, m
+  goal_radius : .1
+
 
 admiral:
   # wall_radius, in m
