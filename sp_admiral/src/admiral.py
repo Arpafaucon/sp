@@ -35,6 +35,7 @@ def rosmain():
     Load data, then periodically performs state optimisation and dispatches orders
     """
     ros_if = AdmiralRosInterface()
+    ros_if.wait_for_go()
     # get the map and params
     obs_map, params = ros_if.init_map_params()
 

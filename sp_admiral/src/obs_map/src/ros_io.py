@@ -5,11 +5,14 @@ Define an interface class that takes care of data loads and publishs
 import math
 import rospy
 import numpy as np
+import time
 
 from nav_msgs.msg import OccupancyGrid
 from sp_core.msg import AdmiralStatus, AdmiralOrders, SwarmPosition
 # from geometry_msgs.msg import Quaternion
 from tf.transformations import euler_from_quaternion
+
+from sp_admiral.srv import StartAdmiral, StartAdmiralRequest, StartAdmiralResponse
 
 
 from .constants import M, Parameters
@@ -27,6 +30,8 @@ SWARM_POSITION_TOPIC = "swarm_position"
 MAP_ROOT_NS = ''
 
 QUEUE_SIZE = 5
+
+
 
 
 class AdmiralRosInterface(object):
@@ -53,6 +58,17 @@ class AdmiralRosInterface(object):
         self._raw_params = None
         self.params = None
         self.map_info = None
+
+        self.can_run = False
+        self.run_service = rospy.Service("start_admiral", StartAdmiral, self.start_admiral)
+
+    def start_admiral(self, req):
+        self.can_run = req.run
+        return StartAdmiralResponse(self.can_run)
+    
+    def wait_for_go(self):
+        while not self.can_run:
+            time.sleep(1)
 
     def _setup_node(self, name=NODE_NAME):
         rospy.init_node(name=name)
