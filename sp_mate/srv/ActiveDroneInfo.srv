@@ -1,0 +1,14 @@
+# Information message
+#####################
+
+# Request:
+# active drone Id we want info from
+int8 active_id
+
+---
+# Response:
+# drone status, connected ID...
+int8 connected_id
+int8 status
+bool is_real
+string namespace

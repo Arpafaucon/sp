@@ -1,0 +1,5 @@
+# request to land one/all drones
+int8 ALL = -1
+int8 id
+---
+bool status
