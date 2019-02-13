@@ -27,6 +27,8 @@ class AdmiralOrdersRviz(object):
 
         self.scale = Vector3()
         self.scale.x = self.scale.y = self.scale.z = 0.05
+
+        rospy.loginfo("Admiral markers set up")
         # self.last_orders = None
 
     def _pub_order(self, orders, target=True):
@@ -124,7 +126,7 @@ class AdmiralOrdersRviz(object):
 
     def _orders_callback(self, orders):
         # define common components
-
+        rospy.logwarn("viz got admiral orders")
         # print orders
         # if self.last_orders:
         #     self._pub_order(self.last_orders, target=False)

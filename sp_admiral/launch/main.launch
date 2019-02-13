@@ -1,7 +1,7 @@
 <launch>
-  <include file="$(find sp_admiral)/launch/viz.launch"/>
-
   <node name="admiral" pkg="sp_admiral" type="admiral.py" ns="/sp" output="screen" required="True">
     <param name="namespace" type="str" value="/sp/admiral"/>
   </node>
+
+  <node name="admiral_viz" pkg="sp_admiral" type="markers.py" ns="/sp" output="screen"/>
 </launch>
