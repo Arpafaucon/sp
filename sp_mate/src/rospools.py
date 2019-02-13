@@ -12,7 +12,7 @@ class PublisherPool:
             return self.pool[namespace]
         else:
             topic = '{}/{}'.format(namespace, self.topic_suffix)
-            pub = rospy.Publisher(topic, self.MsgClass, queue_size=self.queue_size=)
+            pub = rospy.Publisher(topic, self.MsgClass, queue_size=self.queue_size)
             self.pool[namespace] = pub
             return pub
 

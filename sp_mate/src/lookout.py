@@ -13,6 +13,7 @@ from crazyflie_driver.msg import GenericLogData
 
 from rospools import PublisherPool
 
+
 class Lookout:
     def __init__(self):
         rospy.init_node("sp_lookout")
@@ -20,25 +21,26 @@ class Lookout:
         self.rate_hz = float(rospy.get_param('sp/lookout/rate'))
         self.rate_ros = rospy.Rate(self.rate_hz)
         # Allocation subscriber
-        self.swarm_alloc_sub = rospy.Subscriber('sp/swarm_allocation', SwarmAllocation, self._cb_swarm_alloc, None)
-        self.swarm_alloc_msg  = None
+        self.swarm_alloc_sub = rospy.Subscriber(
+            'sp/swarm_allocation', SwarmAllocation, self._cb_swarm_alloc, None)
+        self.swarm_alloc_msg = None
         # Position publisher
-        self.swarm_pos_pub = rospy.Publisher('/sp/swarm_position', SwarmPosition, queue_size=10)
+        self.swarm_pos_pub = rospy.Publisher(
+            '/sp/swarm_position', SwarmPosition, queue_size=10)
         self.swarm_pos_seq = 0
 
         # position service
-        self.drone_pos_srv = rospy.Service("/sp/drone_position", DronePosition, self._srv_drone_location)
+        self.drone_pos_srv = rospy.Service(
+            "/sp/drone_position", DronePosition, self._srv_drone_location)
 
         # position publishers
-        self.pose_pubpool = PublisherPool(PoseStamped, "/pose_stamped")
+        self.pose_pubpool = PublisherPool(PoseStamped, "pose_stamped")
 
-    
     def _srv_drone_location(self, req):
-        x, y, z = self._get_drone_pos(req.active_id)
+        pos, namespace= self._get_drone_pos(req.active_id)
         res = DronePositionResponse()
-        res.position = [x, y, z]
+        res.position = pos[0:4]
         return res
-
 
     def _cb_swarm_alloc(self, msg):
         self.swarm_alloc_msg = msg
@@ -48,7 +50,8 @@ class Lookout:
         assert drone_active_id < self.swarm_alloc_msg.num_drones_active
         ad_namespace = self.swarm_alloc_msg.active_drones_namespaces[drone_active_id]
         ad_position_topic = "/{}/local_position".format(ad_namespace)
-        local_position_msg = rospy.wait_for_message(ad_position_topic, GenericLogData)
+        local_position_msg = rospy.wait_for_message(
+            ad_position_topic, GenericLogData)
         # x = local_position_msg.values[0]
         # y = local_position_msg.values[1]
         # z = local_position_msg.values[2]
@@ -57,37 +60,52 @@ class Lookout:
         # yaw = local_position_msg.values[5]
         return local_position_msg.values, ad_namespace
 
+    def _publish_swarm_pose_stamped(self, swarm_pos):
+        for drone_pos in swarm_pos:
+            pos = drone_pos[0]
+            namespace = drone_pos[1]
+            self._pub_pose_stamped(namespace, *pos)
+
     def _pub_pose_stamped(self, namespace, x, y, z, roll, pitch, yaw):
         pub = self.pose_pubpool.get_pub(namespace)
         pos = PoseStamped()
-        pos.position.x = x
-        pos.position.y = y
-        pos.position.z = z
-
         pos.header.frame_id = "/map"
         pos.header.stamp = rospy.Time.now()
-        pos.orientation = quaternion_from_euler(roll, pitch, yaw)
+
+        pos.pose.position.x = x
+        pos.pose.position.y = y
+        pos.pose.position.z = z
+        qx, qy, qz, qw = quaternion_from_euler(roll, pitch, yaw)
+        pos.pose.orientation.x = qx
+        pos.pose.orientation.y = qy
+        pos.pose.orientation.z = qz
+        pos.pose.orientation.w = qw
 
         pub.publish(pos)
-    
-    def  _get_swarm_pos(self):
+
+    def _get_swarm_pos(self):
+        if self.swarm_alloc_msg is None:
+            rospy.logwarn_throttle(
+                1, "Lookout hasn't received swarm allocation. Cannot publish positions")
+            return None
+        swarm_pos = []
+        for ad_id in range(self.swarm_alloc_msg.num_drones_active):
+            position, ns = self._get_drone_pos(ad_id)
+            swarm_pos.append((position, ns))
+        return swarm_pos
+
+    def _publish_swarm_pos(self, swarm_pos):
+        
         xl = []
         yl = []
         zl = []
         yawl = []
-        swarm_pos = []
-        for ad_id in range(self.swarm_alloc_msg.num_drones_active):
-            position, ns = self._get_drone_pos(ad_id)
-            swarm_pos.append( (position, ns))
-        return swarm_pos
-
-    def _publish_swarm_pos(self, swarm_pos):
-        if self.swarm_alloc_msg is None:
-            rospy.logwarn_throttle(1, "Lookout hasn't received swarm allocation. Cannot publish positions")
-            return
-
         for drone_id in range(len(swarm_pos)):
-            
+            pos = swarm_pos[drone_id][0]
+            xl.append(pos[0])
+            yl.append(pos[1])
+            zl.append(pos[2])
+            yawl.append(pos[3])
 
         swarm_position_msg = SwarmPosition()
         swarm_position_msg.header.stamp = rospy.Time.now()
@@ -102,16 +120,22 @@ class Lookout:
         swarm_position_msg.yaw = yl
 
         self.swarm_pos_pub.publish(swarm_position_msg)
-        rospy.loginfo("published swarm positions")
+        rospy.loginfo_throttle(1, "published swarm positions")
 
     def spin(self):
         while (not rospy.is_shutdown()):
-            self._publish_swarm_pos()
+            swarm_pos = self._get_swarm_pos()
+            if swarm_pos is not None:
+                self._publish_swarm_pos(swarm_pos)
+                self._publish_swarm_pose_stamped(swarm_pos)
+
             self.rate_ros.sleep()
+
 
 def rosmain():
     look = Lookout()
     look.spin()
+
 
 if __name__ == "__main__":
     rosmain()
