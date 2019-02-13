@@ -63,10 +63,12 @@ class AdmiralRosInterface(object):
         self.run_service = rospy.Service("start_admiral", StartAdmiral, self.start_admiral)
 
     def start_admiral(self, req):
+        rospy.loginfo("New admiral status : can_run={}".format(req.can_run))
         self.can_run = req.run
         return StartAdmiralResponse(self.can_run)
     
     def wait_for_go(self):
+        rospy.logdebug_throttle(.3, "Admiral in standby. call 'start_admiral' service to start")
         while not self.can_run:
             time.sleep(1)
 
