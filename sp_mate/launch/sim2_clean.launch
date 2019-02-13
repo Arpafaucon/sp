@@ -1,0 +1,6 @@
+<launch>
+    <node pkg="rosservice" type="rosservice" name="clean_cf1" args="call --wait /gazebo/delete_model &quot;model_name: 'cf1'&quot;"/>
+    <node pkg="rosservice" type="rosservice" name="clean_cf2" args="call --wait /gazebo/delete_model &quot;model_name: 'cf2'&quot;"/>
+    <node pkg="rosservice" type="rosservice" name="clean_handler" args="call --wait /gazebo/delete_model &quot;model_name: 'handler1'&quot;"/>
+    <node pkg="sp_mate" type="clean_cf2.sh" name="clean_drivers"/>
+</launch>
