@@ -1,5 +1,7 @@
 Header header
 
+# DEPRECATED
+
 ## Convergence results
 uint8 num_drones
 # length = num_drones
