@@ -85,7 +85,7 @@ class RosRrtWrapper(object):
             with self.map_lock:
                 if self.map is None or self.orders is None:
                     rospy.logwarn_throttle(
-                        1, 'Cannot plan path : missing map or orders')
+                        10, 'Captain cannot plan path : missing map or orders')
                     return False, None
                 if self.last_orders_seq == self.orders.header.seq:
                     # orders didn't change, no need to work
