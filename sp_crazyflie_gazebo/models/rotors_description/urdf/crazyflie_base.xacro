@@ -10,6 +10,7 @@
 
   <xacro:arg name='name' default='crazyflie' />
   <xacro:arg name='enable_wind' default='$(arg enable_wind)' />
+  <xacro:arg name='enable_light' default='true' />
 
   <!-- The following causes segfault with multiple vehicles if defaults to true!!! -->
   <xacro:arg name='enable_logging' default='false' />
@@ -32,8 +33,10 @@
     <xacro:wind_plugin_macro namespace="${namespace}" wind_direction="0 0 1" wind_force_mean="0.7" xyz_offset="1 0 0" wind_gust_direction="0 0 0" wind_gust_duration="0" wind_gust_start="0" wind_gust_force_mean="0" />
   </xacro:if>
 
-  <xacro:spotlight_macro namespace="${namespace}" parent_link="base_link">
-  </xacro:spotlight_macro >
+  <xacro:if value="$(arg enable_light)">
+    <xacro:spotlight_macro namespace="${namespace}" parent_link="base_link">
+    </xacro:spotlight_macro >
+  </xacro:if>
 
   <!-- MPU-6500 IMU obtained from  experiments and match datasheets-->
   <xacro:imu_plugin_macro namespace="${namespace}" imu_suffix="" parent_link="base_link" imu_topic="${imu_topic}" mass_imu_sensor="0.00001" rate="500" gyroscope_noise_density="1.7667e-4" gyroscope_random_walk="9.2542e-06" gyroscope_bias_correlation_time="1000.0" gyroscope_turn_on_bias_sigma="0.03" accelerometer_noise_density="0.0032" accelerometer_random_walk="1.3524e-04" accelerometer_bias_correlation_time="300.0" accelerometer_turn_on_bias_sigma="0.1">
