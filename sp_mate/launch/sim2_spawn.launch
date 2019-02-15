@@ -51,13 +51,11 @@
       (even when Gazebo is started through roslaunch) -->
   <arg name="verbose" default="true"/>
 
-  <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find crazyflie_gazebo)/models"/>
-  <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find crazyflie_gazebo)/models"/>
+  <!-- <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find crazyflie_gazebo)/models"/>
+  <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find crazyflie_gazebo)/models"/> -->
 
   <group ns="$(arg cfPrefix)1">
-    <include file="$(find crazyflie_gazebo)/launch/spawn_mav.launch">
-      <arg name="mav_name" value="$(arg mav_name)" />
-      <arg name="model" value="$(find crazyflie_gazebo)/models/rotors_description/urdf/$(arg mav_name)_base.xacro" />
+    <include file="$(find sp_crazyflie_gazebo)/launch/spawn_sp_crazyflie.launch">
       <arg name="tf_prefix" value="$(arg tf_prefix_1)"/>
       <arg name="color_prop_front" default="$(arg color_prop_front_1)" />
       <arg name="color_prop_back" default="$(arg color_prop_back_1)" />
@@ -68,9 +66,7 @@
   </group>
 
   <group ns="$(arg cfPrefix)2">
-    <include file="$(find crazyflie_gazebo)/launch/spawn_mav.launch">
-      <arg name="mav_name" value="$(arg mav_name)" />
-      <arg name="model" value="$(find crazyflie_gazebo)/models/rotors_description/urdf/$(arg mav_name)_base.xacro" />
+    <include file="$(find sp_crazyflie_gazebo)/launch/spawn_sp_crazyflie.launch">
       <arg name="tf_prefix" value="$(arg tf_prefix_2)"/>
       <arg name="color_prop_front" default="$(arg color_prop_front_2)" />
       <arg name="color_prop_back" default="$(arg color_prop_back_2)" />
