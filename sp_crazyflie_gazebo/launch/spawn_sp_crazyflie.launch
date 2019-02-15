@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 
 <launch>
-  <arg name="model" default="$(find sp_crazyflie_gazebo)/models/rotors_description/urdf/crazyflie_base.xacro"/>
+  <arg name="model" value="$(find sp_crazyflie_gazebo)/models/rotors_description/urdf/crazyflie_base.xacro"/>
   <arg name="x" default="0.0"/>
   <arg name="y" default="0.0"/>
-  <arg name="z" default="1.03"/>
+  <arg name="z" default=".03"/>
   <arg name="enable_ground_truth" default="false"/>
   <arg name="enable_wind" default="false"/>
-  <arg name="rotors_description_dir" default="$(find sp_crazyflie_gazebo)/models/rotors_description"/>
+  <arg name="rotors_description_dir" value="$(find sp_crazyflie_gazebo)/models/rotors_description"/>
   <arg name="tf_prefix" default="spcf"/>
   
   <arg name="color_prop_front" default="Blue" />
