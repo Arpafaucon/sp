@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <xacro:macro name="spotlight_macro" params="namespace parent_link
+     ">
+        <joint name="${namespace}/spot_joint" type="fixed">
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <parent link="${parent_link}" />
+            <child link="${namespace}/spot_link" />
+        </joint>
+
+        <link name="${namespace}/spot_link">
+
+        </link>
+        <gazebo reference="${namespace}/spot_link">
+            <light type="spot" name="spot_vision">
+                <pose>0 0 0 0 0 0</pose>
+                <diffuse>1 1 0.5 1</diffuse>
+                <specular>.0 0 0 0</specular>
+                <attenuation>
+                    <range>5</range>
+                    <linear>0</linear>
+                    <constant>0.2</constant>
+                    <quadratic>0.0</quadratic>
+                </attenuation>
+                <cast_shadows>false</cast_shadows>
+                <spot>
+                    <inner_angle>1.04</inner_angle>
+                    <outer_angle>1.05</outer_angle>
+                    <falloff>0.1</falloff>
+                </spot>
+            </light>
+        </gazebo>
+
+    </xacro:macro>
+
+
+</robot>
+
+<!-- old stuff kept in case -->
+<!-- <inertial>
+                <mass value="0.00001"/>
+                <inertia ixx="0.000001" ixy="0.0" ixz="0.0" iyy="0.00001" iyz="0.0" izz="0.000001" />
+            </inertial> -->
+<!-- inertial and visual elements are required so Gazebo doesn't optimize the link out -->
+<!-- <visual name="spot_visual">
+                <geometry>
+                    <box size=".005 .005 .005"/>
+                </geometry>
+                <material name="silver">
+                    <color rgba="0.75 0.75 0.75 1"/>
+                </material>
+            </visual> -->
+<!-- <inertial>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <mass value=".00001"/>
+                <inertia ixx="0.0000000001" ixy="0.0" ixz="0.0" iyy="0.0000000001" iyz="0.0" izz="0.0000000001" />
+            </inertial> -->
