@@ -7,6 +7,9 @@ from sp_core.msg import AdmiralOrders
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
 
+ADM_ORDERS_SUB = '/sp/admiral_orders'
+ADM_VIZ_PUB = '/sp/admiral_viz'
+
 def extract_coords(orders, target=True):
     if target:
         return orders.target_xs, orders.target_ys
@@ -16,14 +19,16 @@ def extract_coords(orders, target=True):
 class AdmiralOrdersRviz(object):
     def __init__(self):
         rospy.init_node('admiral_rviz')
-        self.orders_viz_pub = rospy.Publisher('/sp/admiral_viz', Marker, queue_size=5)
-        self.orders_sub = rospy.Subscriber(
-            '/sp/admiral_orders', AdmiralOrders, self._orders_callback, queue_size=5)
+        self.orders_viz_pub = rospy.Publisher(ADM_VIZ_PUB, Marker, queue_size=5)
+        self.orders_sub = rospy.Subscriber(ADM_ORDERS_SUB
+            , AdmiralOrders, self._orders_callback, queue_size=5)
         self.sight_radius = rospy.get_param('/sp/admiral/drone_sight_radius')
         self.seq = 0
 
         self.scale = Vector3()
         self.scale.x = self.scale.y = self.scale.z = 0.05
+
+        rospy.loginfo("Admiral markers set up")
         # self.last_orders = None
 
     def _pub_order(self, orders, target=True):
@@ -57,6 +62,7 @@ class AdmiralOrdersRviz(object):
             loc.z = 0
             viz.points.append(loc)
 
+        rospy.loginfo("pub {} points".format(len(viz.points)))
         self.orders_viz_pub.publish(viz)
 
     def _pub_drone_ids(self, orders):
@@ -120,7 +126,7 @@ class AdmiralOrdersRviz(object):
 
     def _orders_callback(self, orders):
         # define common components
-
+        rospy.logwarn("viz got admiral orders")
         # print orders
         # if self.last_orders:
         #     self._pub_order(self.last_orders, target=False)

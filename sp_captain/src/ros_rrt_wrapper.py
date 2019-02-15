@@ -52,6 +52,7 @@ class RosRrtWrapper(object):
         # self.ordres_publisher = orders_publisher
 
     def set_map(self, map_msg):
+        rospy.loginfo_throttle(1, "Captain got map msg")
         with self.map_lock:
             self.map = map_msg
             map_info = map_msg.info
@@ -70,6 +71,7 @@ class RosRrtWrapper(object):
             self.map_sin_yaw = math.sin(yaw)
 
     def set_orders(self, orders_msg):
+        rospy.loginfo_throttle(1, "Captain got orders msg")
         with self.orders_lock:
             self.orders = orders_msg
 
@@ -83,12 +85,17 @@ class RosRrtWrapper(object):
     def _spin_once(self):
         with self.orders_lock:
             with self.map_lock:
-                if self.map is None or self.orders is None:
+                if self.orders is None:
                     rospy.logwarn_throttle(
-                        1, 'Cannot plan path : missing map or orders')
+                        5, 'Captain cannot plan path : missing  orders')
+                    return False, None
+                if self.map is None:
+                    rospy.logwarn_throttle(
+                        5, 'Captain cannot plan path : missing map')
                     return False, None
                 if self.last_orders_seq == self.orders.header.seq:
                     # orders didn't change, no need to work
+                    rospy.loginfo_throttle(1, "Captain didn't get new orders")
                     return False, None
 
                 # let's compute !
@@ -101,10 +108,6 @@ class RosRrtWrapper(object):
                 else:
                     self._publish_captain_orders(results)
                     self._publish_captain_viz(results)
-
-                
-
-                
 
     def _planif_assign(self):
         map_array = self._build_map_array()

@@ -25,7 +25,7 @@ NODE_NAME = "admiral_node"
 STATUS_TOPIC = "admiral_status"
 SCORE_TOPIC = "admiral_score"
 ORDERS_TOPIC = "admiral_orders"
-SWARM_POSITION_TOPIC = "swarm_position"
+SWARM_POSITION_TOPIC = "/sp/swarm_position"
 
 MAP_ROOT_NS = ''
 
@@ -47,7 +47,7 @@ class AdmiralRosInterface(object):
     """
 
     def __init__(self):
-        self._setup_node()
+        rospy.init_node(name=NODE_NAME)
         self.status_pub = rospy.Publisher(
             "/sp/"+STATUS_TOPIC, AdmiralStatus, queue_size=QUEUE_SIZE)
         self.score_pub = rospy.Publisher(
@@ -61,19 +61,24 @@ class AdmiralRosInterface(object):
 
         self.can_run = False
         self.run_service = rospy.Service("start_admiral", StartAdmiral, self.start_admiral)
+        rospy.on_shutdown(self.shutdown)
 
     def start_admiral(self, req):
-        rospy.loginfo("New admiral status : can_run={}".format(req.can_run))
+        rospy.loginfo("New admiral status : can_run={}".format(req.run))
         self.can_run = req.run
         return StartAdmiralResponse(self.can_run)
     
     def wait_for_go(self):
-        rospy.logdebug_throttle(.3, "Admiral in standby. call 'start_admiral' service to start")
+        rospy.loginfo("Admiral in standby. call 'start_admiral' service to start")
         while not self.can_run:
             time.sleep(1)
+            if rospy.is_shutdown():
+                # stop waiting and signal we must exit
+                return False
+        return True
 
-    def _setup_node(self, name=NODE_NAME):
-        rospy.init_node(name=name)
+    def shutdown(self):
+        self.run_service.shutdown()
 
     def init_map_params(self):
         """
@@ -251,22 +256,38 @@ class AdmiralRosInterface(object):
             score (float): score of the target configuration
             avg_score (float): reference average score for the past steps
         """
-        self._publish_orders(state_current, state_target)
+        self._publish_orders(state_current, state_target, num_drones, convergence_steps, score, avg_score)
         self._publish_score(obs_map)
-        self._publish_status(num_drones, state_current,
-                             state_target, convergence_steps, score, avg_score)
+        # self._publish_status(num_drones, state_current,
+                            #  state_target, convergence_steps, score, avg_score)
         rospy.logdebug('Admiral messages published')
 
-    def _publish_orders(self, state_current, state_target):
-        target_xs, target_ys = self._transform_coordinates(state_target)
-        current_xs, current_ys = self._transform_coordinates(state_current)
-
+    def _publish_orders(self, state_current, state_target, num_drones, convergence_steps, score, avg_score ):
+        # Message Setup
         orders = AdmiralOrders()
         orders.header.stamp = rospy.Time.now()
-        orders.header.seq = self.seq
-        # orders.num_drones = self.params.NUM_DRONES
+        # orders.header.seq = self.seq
+
+        # Configuration Recap
         orders.sight_radius = self.params.DRONE_SIGHT_RADIUS * self.map_info.resolution
         orders.period = 1./self.params.RATE
+        orders.num_drones = num_drones
+
+        # Grid optim results
+        curr_is, curr_js = self._extract_xy(state_current)
+        target_is, target_js = self._extract_xy(state_target)
+        orders.current_is = curr_is
+        orders.current_js = curr_js
+        orders.target_is = target_is
+        orders.target_js = target_js
+
+        orders.num_convergence_steps = convergence_steps
+        orders.score = score
+        orders.avg_score = avg_score
+        
+        # Orders
+        target_xs, target_ys = self._transform_coordinates(state_target)
+        current_xs, current_ys = self._transform_coordinates(state_current)
 
         orders.current_xs = current_xs
         orders.current_ys = current_ys
@@ -275,43 +296,12 @@ class AdmiralRosInterface(object):
 
         self.orders_pub.publish(orders)
 
-    def _publish_score(self, obs_map):
-        SCALE = 255./100
-        grid = OccupancyGrid()
-        grid.header.stamp = rospy.Time.now()
-        grid.header.frame_id = 'map'
-        grid.header.seq = self.seq
-
-        grid.info = self.map_info
-        score_array = obs_map[::-1, :, M.SCORE] / SCALE
-        score_list = list(map(int, score_array.reshape(-1)))
-
-        grid.data = score_list
-        self.score_pub.publish(grid)
-
-    def get_drone_positions(self):
-        swpos_msg = rospy.wait_for_message("/sp/" + SWARM_POSITION_TOPIC, SwarmPosition)
-        x = swpos_msg.x
-        y = swpos_msg.y
-        rospy.loginfo( "got position on world : {}".format(list(zip(x, y))))
-        num_drones = swpos_msg.num_drones_active
-        state = []
-        for i_drone in range(num_drones):
-            x_drone, y_drone = x[i_drone], y[i_drone]
-            i_drone, j_drone = self._tf_world2grid(x_drone, y_drone)
-            rospy.loginfo("tf {} {} -> {} {}".format(x_drone, y_drone, i_drone, j_drone))
-            state.append( (i_drone, j_drone) )
-        rospy.loginfo( "got position on grid : {}".format(state))
-        return state, num_drones
-
-    @staticmethod
-    def _extract_xy(state):
-        tup_x, tup_y = zip(*tuple(state))
-        return list(tup_x), list(tup_y)
-
     def _publish_status(self,
                         num_drones, state_current, state_target,
                         convergence_steps, score, avg_score):
+        """
+        @Deprecated
+        """
         curr_is, curr_js = self._extract_xy(state_current)
         target_is, target_js = self._extract_xy(state_target)
 
@@ -333,3 +323,40 @@ class AdmiralRosInterface(object):
         ad_stat.avg_score = avg_score
 
         self.status_pub.publish(ad_stat)
+
+
+    def _publish_score(self, obs_map):
+        SCALE = 255./100
+        grid = OccupancyGrid()
+        grid.header.stamp = rospy.Time.now()
+        grid.header.frame_id = 'map'
+        grid.header.seq = self.seq
+
+        grid.info = self.map_info
+        score_array = obs_map[::-1, :, M.SCORE] / SCALE
+        score_list = list(map(int, score_array.reshape(-1)))
+
+        grid.data = score_list
+        self.score_pub.publish(grid)
+
+    def get_drone_positions(self):
+        swpos_msg = rospy.wait_for_message(SWARM_POSITION_TOPIC, SwarmPosition)
+        x = swpos_msg.x
+        y = swpos_msg.y
+        num_drones = swpos_msg.num_drones_active
+        rospy.loginfo( "got position on world [{}]: {}".format(num_drones, list(zip(x, y))))
+        state = []
+        for i_drone in range(num_drones):
+            x_drone, y_drone = x[i_drone], y[i_drone]
+            i_drone, j_drone = self._tf_world2grid(x_drone, y_drone)
+            rospy.loginfo("tf {} {} -> {} {}".format(x_drone, y_drone, i_drone, j_drone))
+            state.append( (i_drone, j_drone) )
+        rospy.loginfo( "got position on grid : {}".format(state))
+        return state, num_drones
+
+    @staticmethod
+    def _extract_xy(state):
+        tup_x, tup_y = zip(*tuple(state))
+        return list(tup_x), list(tup_y)
+
+

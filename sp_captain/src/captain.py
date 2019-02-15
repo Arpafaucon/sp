@@ -33,7 +33,7 @@ class Captain(object):
     """
 
     def __init__(self):
-        rospy.init_node('sp_captain_node')
+        rospy.init_node(name="captain")
 
         self.orders_pub = rospy.Publisher(
             STATUS_TOPIC, CaptainOrders, queue_size=QUEUE_SIZE)

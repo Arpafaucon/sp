@@ -35,7 +35,13 @@ def rosmain():
     Load data, then periodically performs state optimisation and dispatches orders
     """
     ros_if = AdmiralRosInterface()
-    ros_if.wait_for_go()
+
+    # blocking wait 
+    # return false if node must shutdown
+    if not ros_if.wait_for_go():
+        rospy.loginfo("admiral was shut down while waiting to start")
+        return
+
     # get the map and params
     obs_map, params = ros_if.init_map_params()
 
@@ -77,6 +83,7 @@ def rosmain():
 
         # ... and sleep until t0+T
         rate.sleep()
+
     rospy.loginfo('admiral was shut down gracefully')
 
 

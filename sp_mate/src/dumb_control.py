@@ -6,7 +6,9 @@ import rospy
 from crazyflie_driver.msg import GenericLogData, Position
 from crazyflie_driver.srv import GoTo, GoToRequest
 from sp_core.msg import CaptainOrders
-from sp_mate.srv import ActiveDroneInfo, DroneLocation
+from sp_mate.srv import ActiveDroneInfo, DronePosition
+
+from rospools import PublisherPool, ServiceProxyPool
 
 DRONE_INFO_SRV = '/sp/active_drone_info'
 DRONE_LOCATION_SRV = '/sp/drone_position'
@@ -40,36 +42,7 @@ class DroneMission:
         self.namespace = None # string
 
 
-class PublisherPool:
-    def __init__(self, Message_Class, topic_suffix):
-        self.pool = dict()
-        self.MsgClass = Message_Class
-        self.topic_suffix = topic_suffix
 
-    def get_pub(self, namespace):
-        if namespace in self.pool:
-            return self.pool[namespace]
-        else:
-            topic = '{}/{}'.format(namespace, self.topic_suffix)
-            pub = rospy.Publisher(topic, self.MsgClass, queue_size=10)
-            self.pool[namespace] = pub
-            return pub
-
-class ServiceProxyPool:
-    def __init__(self, Srv_class, srv_suffix):
-        self.pool = dict()
-        self.MsgClass = Srv_class
-        self.srv_suffix = srv_suffix
-
-    def get_pub(self, namespace):
-        if namespace in self.pool:
-            return self.pool[namespace]
-        else:
-            topic = '{}/{}'.format(namespace, self.srv_suffix)
-            rospy.wait_for_service(topic)
-            srv = rospy.ServiceProxy(topic, self.MsgClass)
-            self.pool[namespace] = srv
-            return srv
 
 
 class DumbControl:
@@ -81,7 +54,7 @@ class DumbControl:
         rospy.wait_for_service(DRONE_INFO_SRV)
         self.active_drone_info_svp = rospy.ServiceProxy(DRONE_INFO_SRV,ActiveDroneInfo)
         rospy.wait_for_service(DRONE_LOCATION_SRV)
-        self.drone_location_svp = rospy.ServiceProxy(DRONE_LOCATION_SRV, DroneLocation)
+        self.drone_location_svp = rospy.ServiceProxy(DRONE_LOCATION_SRV, DronePosition)
         rospy.loginfo("Required services are available")
 
 

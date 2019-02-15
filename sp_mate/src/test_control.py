@@ -10,10 +10,17 @@ def test_control():
 
     cm = CaptainOrders()
     cm.num_drones = 2
-    cm.waypoints_start_indices = [0, 3]
-    cm.waypoints_stop_indices = [3, 6]
-    cm.waypoints_x = [2, 5, 2, 0, 0, 0]
-    cm.waypoints_y = [2, 2, 2, 1, 3, 1]
+    cm.waypoints_start_indices = [0,1]
+    cm.waypoints_stop_indices = [1, 2]
+    cm.waypoints_x = [0,1]
+    cm.waypoints_y = [0,0]
+
+#     cm = CaptainOrders()
+#     cm.num_drones = 2
+#     cm.waypoints_start_indices = [0,3]
+#     cm.waypoints_stop_indices = [3, 6]
+#     cm.waypoints_x = [2, 5, 2, 0, 0, 0]
+#     cm.waypoints_y = [2, 2, 2, 1, 3, 1]
 
     while not rospy.is_shutdown():
         pub.publish(cm)
