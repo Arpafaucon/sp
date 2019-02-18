@@ -53,7 +53,8 @@ message_generation)
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  DronePosition
+  DronePosition.srv
+  SwarmPositionSrv.srv
 )
 
 ## Generate actions in the 'action' folder

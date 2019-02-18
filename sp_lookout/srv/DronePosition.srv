@@ -3,5 +3,5 @@
 
 int8 active_id
 ---
-# position array [x, y, z]
+# position array [x, y, z, r, p, y] USI
 float64[] position
