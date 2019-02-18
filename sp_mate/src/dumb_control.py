@@ -8,7 +8,7 @@ from crazyflie_driver.srv import GoTo, GoToRequest
 from sp_core.msg import CaptainOrders
 from sp_mate.srv import ActiveDroneInfo, DronePosition
 
-from rospools import PublisherPool, ServiceProxyPool
+from sp_core.tools.rospools import PublisherPool, ServiceProxyPool
 
 DRONE_INFO_SRV = '/sp/active_drone_info'
 DRONE_LOCATION_SRV = '/sp/drone_position'
@@ -102,6 +102,7 @@ class DumbControl:
             m.active_id = drone_id
             m.connected_id = active_info.connected_id
             m.waypoints = wp_tuples
+            # IMPORTANT: changing the below value to 1 means that the first target drones will try to reach is the first waypoint (and not the starting point of the trip)
             m.current_wp = 0 # < len(wp_tuples)
             m.namespace = active_info.namespace
             m.arrived = False
