@@ -6,5 +6,5 @@
 <launch>
     <include file="$(find crazyflie_driver)/launch/crazyflie_server.launch"/>
     <!-- <node pkg="crazyflie_gazebo" type="run_cfs.sh" args="2 19950 INADDR_ANY" name="run_cfs"/> -->
-    <include file="$(find sp_mate)/launch/sim_2_cf.launch"/>
+    <include file="$(find sp_mate)/launch/sim_4_cf.launch"/>
 </launch>

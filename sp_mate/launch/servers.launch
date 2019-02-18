@@ -15,4 +15,6 @@
         <arg name="gui" value="$(arg gui)" />
         <arg name="verbose" value="$(arg verbose)"/>
     </include>
+
+    <include file="$(find crazyflie_driver)/launch/crazyflie_server.launch"/>
 </launch>

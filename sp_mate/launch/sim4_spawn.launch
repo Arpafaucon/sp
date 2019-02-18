@@ -24,18 +24,18 @@
   <arg name="handlerName" default="handler1"/>
 
   <!-- Arguments for first Crazyflie -->
-  <arg name="tf_prefix_0" default="$(arg cfPrefix)0" />
+  <arg name="tf_prefix_0" default="$(arg cfPrefix)4" />
   <arg name="color_prop_front_0" default="White" />
   <arg name="color_prop_back_0" default="White" />
   <arg name="x_0" default="0.0" />
-  <arg name="y_0" default="1.0" />
+  <arg name="y_0" default="0.4" />
   <arg name="z_0" default="0.03" />
 
   <!-- Arguments for first Crazyflie -->
   <arg name="tf_prefix_1" default="$(arg cfPrefix)1" />
   <arg name="color_prop_front_1" default="Blue" />
   <arg name="color_prop_back_1" default="Blue" />
-  <arg name="x_1" default="1.0" />
+  <arg name="x_1" default="0.4" />
   <arg name="y_1" default="0.0" />
   <arg name="z_1" default="0.03" />
 
@@ -43,7 +43,7 @@
   <arg name="tf_prefix_2" default="$(arg cfPrefix)2" />
   <arg name="color_prop_front_2" default="Red" />
   <arg name="color_prop_back_2" default="Red" />
-  <arg name="x_2" default="-1.0" />
+  <arg name="x_2" default="-0.4" />
   <arg name="y_2" default="0.0" />
   <arg name="z_2" default="0.03" />
 
@@ -52,7 +52,7 @@
   <arg name="color_prop_front_3" default="Green" />
   <arg name="color_prop_back_3" default="Green" />
   <arg name="x_3" default="0.0" />
-  <arg name="y_3" default="-1.0" />
+  <arg name="y_3" default="-0.4" />
   <arg name="z_3" default="0.03" />
 
 
@@ -68,7 +68,7 @@
       (even when Gazebo is started through roslaunch) -->
   <arg name="verbose" default="true"/>
 
-  <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find crazyflie_gazebo)/models"/>
+  <!-- <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find crazyflie_gazebo)/models"/>
   <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find crazyflie_gazebo)/models"/>
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -77,7 +77,7 @@
     <arg name="paused" value="$(arg paused)" />
     <arg name="gui" value="$(arg gui)" />
     <arg name="verbose" value="$(arg verbose)"/>
-  </include>
+  </include> -->
 
   <group ns="$(arg cfPrefix)1">
     <include file="$(find crazyflie_gazebo)/launch/spawn_mav.launch">
@@ -138,7 +138,7 @@
       <arg name="nbQuads" value="$(arg nbQuads)" />
       <arg name="cfPrefix" value="$(arg cfPrefix)" />
       <arg name="uri" value="$(arg uri)" />
-      <arg name="firstIndex" value="0" /> <!-- First crazyflie index -->
+      <arg name="firstIndex" value="1" /> <!-- First crazyflie index -->
 
       <arg name="enable_logging" value="$(arg enable_logging)"/>
       <arg name="enable_parameters" value="$(arg enable_parameters)"/>

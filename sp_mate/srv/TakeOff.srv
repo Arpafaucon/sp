@@ -1,5 +1,7 @@
 # request to take off one/all drones
-int8 ALL = -1
+int8 ACTIVE = -1
+int8 ALL = -2
+
 int8 id
 ---
 bool status
