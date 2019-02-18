@@ -13,6 +13,7 @@ from sp_core.msg import AdmiralStatus, AdmiralOrders, SwarmPosition
 from tf.transformations import euler_from_quaternion
 
 from sp_admiral.srv import StartAdmiral, StartAdmiralRequest, StartAdmiralResponse
+from sp_lookout.srv import SwarmPositionSrv, SwarmPositionSrvResponse
 
 
 from .constants import M, Parameters
@@ -26,6 +27,8 @@ STATUS_TOPIC = "admiral_status"
 SCORE_TOPIC = "admiral_score"
 ORDERS_TOPIC = "admiral_orders"
 SWARM_POSITION_TOPIC = "/sp/swarm_position"
+SWARM_POSITION_SRV = "/sp/swarm_position"
+
 
 MAP_ROOT_NS = ''
 
@@ -61,6 +64,10 @@ class AdmiralRosInterface(object):
 
         self.can_run = False
         self.run_service = rospy.Service("start_admiral", StartAdmiral, self.start_admiral)
+
+        rospy.wait_for_service(SWARM_POSITION_SRV)
+        self.svp_swarm_position = rospy.ServiceProxy(SWARM_POSITION_SRV, SwarmPositionSrv)
+
         rospy.on_shutdown(self.shutdown)
 
     def start_admiral(self, req):
@@ -340,10 +347,12 @@ class AdmiralRosInterface(object):
         self.score_pub.publish(grid)
 
     def get_drone_positions(self):
-        swpos_msg = rospy.wait_for_message(SWARM_POSITION_TOPIC, SwarmPosition)
-        x = swpos_msg.x
-        y = swpos_msg.y
-        num_drones = swpos_msg.num_drones_active
+        # swpos_msg = rospy.wait_for_message(SWARM_POSITION_TOPIC, SwarmPosition)
+        swarm_position = self.svp_swarm_position()
+
+        x = swarm_position.x
+        y = swarm_position.y
+        num_drones = swarm_position.num_active_drones
         rospy.loginfo( "got position on world [{}]: {}".format(num_drones, list(zip(x, y))))
         state = []
         for i_drone in range(num_drones):
