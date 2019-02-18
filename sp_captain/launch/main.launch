@@ -1,3 +1,3 @@
 <launch>
-    <node name="captain_node" pkg="sp_captain" type="captain.py" ns="captain" output="screen"/>
+    <node name="captain_node" pkg="sp_captain" type="captain.py" ns="captain" output="screen" required="true"/>
 </launch>

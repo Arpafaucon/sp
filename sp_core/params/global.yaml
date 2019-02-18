@@ -27,18 +27,31 @@ mate:
 admiral:
   # wall_radius, in m
   wall_radius: .3
+  # simulated recoil inital temperature. The hotter it is, the more likely will unpromising directions be explored during target position optimisation
   initial_temp: 100
-  n_iterations: 40
+  # number of steps to find the optimum.
+  # if bigger, algorithm will better target optimal locations
+  # however the locations will be farther from the drones, so that implies an additional burden on sp_captain node. Therefore, if captain fails too often, reduce this value
+  n_iterations: 100
   # sight radius, in m
   drone_sight_radius: .3
   # optimisation rate, in Hz
-  rate: .1
+  rate: .15
   # score increment per cycle
   score_step_increment: 4
 captain:
   # update check rate, in Hz
-  rate: .2
+  rate: .4
+  # max number of iterations to find trajectory tree
+  iterations: 400
+  # expand distance, in meters
+  # if map is convex enough, you can increase that distance to allow faster waypoint calculation. However, you risk that some trajectories cross  wall corners
+  expand_distance: .7
+  # enabling the debug animation window will show internal RRT process.
+  # this will slow down **A LOT** the process
+  debug_animation: True
 
 lookout:
+  # position update rate, Hz
   rate: 1
 

@@ -10,8 +10,21 @@ from sp_core.msg import AdmiralStatus, AdmiralOrders, CaptainOrders
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Vector3, Point
 from std_msgs.msg import ColorRGBA
+
+
+from sp_lookout.srv import SwarmPositionSrv, SwarmPositionSrvResponse
 import rrt.arrts_multi
 
+SRV_SWARM_POSITION = "/sp/swarm_position"
+
+QUEUE_SIZE = 5
+SUB_ADMIRAL_ORDERS = '/sp/admiral_orders'
+SUB_MAP = '/map'
+
+PUB_CAPTAIN_ORDERS = '/sp/captain_orders'
+PUB_CAPTAIN_VIZ = '/sp/captain_viz'
+
+ROOT_NS = "/sp/captain/"
 
 class RrtWrapperResults(object):
     def __init__(self):
@@ -26,7 +39,9 @@ class RrtWrapperResults(object):
 
 class RosRrtWrapper(object):
 
-    def __init__(self, orders_publisher, viz_publisher):
+    def __init__(self):
+        rospy.init_node(name="captain")
+
         self.map_lock = threading.RLock()
         self.map = None
         self.map_sin_yaw = None
@@ -40,16 +55,45 @@ class RosRrtWrapper(object):
         self.last_orders_seq = None
         self.num_drones = None
 
-        self.orders_pub = orders_publisher
-        self.orders_seq = 0
+        # -----------------
+        # Subscribers
+        self.orders_sub = rospy.Subscriber(
+            SUB_ADMIRAL_ORDERS, data_class=AdmiralOrders, callback=self.set_orders)
 
-        self.viz_pub = viz_publisher
-        self.viz_seq = 0
+        self.map_sub = rospy.Subscriber(
+            SUB_MAP, data_class=OccupancyGrid, callback=self.set_map)
+
+        # -----------------
+        # Publishers
+        self.orders_pub = rospy.Publisher(
+            PUB_CAPTAIN_ORDERS, CaptainOrders, queue_size=QUEUE_SIZE)
+
+        self.viz_pub = rospy.Publisher(PUB_CAPTAIN_VIZ, Marker, queue_size=QUEUE_SIZE)
         self.viz_scale = Vector3()
         self.viz_scale.x = 0.02
         self.viz_color = ColorRGBA()
         self.viz_color.r = self.viz_color.a = self.viz_color.g = 0.9
-        # self.ordres_publisher = orders_publisher
+
+
+        # -----------------
+        # Parameters
+        self.pm_iterations = int(rospy.get_param(ROOT_NS+"iterations"))
+        self.pm_expand_distance = float(rospy.get_param(ROOT_NS+"expand_distance"))
+        self.pm_rate = float(rospy.get_param(ROOT_NS+"rate"))
+        self.rate_ros = rospy.Rate(self.pm_rate)
+        self.pm_debug_animation = bool(rospy.get_param(ROOT_NS+"debug_animation", default=False))
+        if self.pm_debug_animation:
+            rospy.logwarn("Debug animation is enabled. This will SLOW DOWN captain search A LOT (but apparently you need it anyway to figure out something). ")
+
+
+
+
+
+        rospy.wait_for_service(SRV_SWARM_POSITION)
+        self.svp_swarm_position = rospy.ServiceProxy(SRV_SWARM_POSITION, SwarmPositionSrv)
+        
+
+
 
     def set_map(self, map_msg):
         rospy.loginfo_throttle(1, "Captain got map msg")
@@ -76,10 +120,30 @@ class RosRrtWrapper(object):
             self.orders = orders_msg
 
         
-    def spin_once_rate(self, rate_freq_hz=2):
-        rate = rospy.Rate(rate_freq_hz)
+    def spin_once_rate(self):
         self._spin_once()
-        rate.sleep()
+        self.rate_ros.sleep()
+
+    def _get_current_positions(self):
+        """
+        Call location service to get current drone positions
+        
+        Raises:
+            RuntimeError: if current drone number doesn't match the one we got from the orders. In that case, the best is to signal the issue and wait for next orders
+        
+        Returns:
+            array[num_drones*array[2*float]]: list of starting position in the form [ [x1, y1], [x2, y2], ...]
+        """
+        swpos_res = self.svp_swarm_position.call()
+        with self.orders_lock:
+            num_drones = self.orders.num_drones
+            if swpos_res.num_active_drones != self.orders.num_drones:
+                raise RuntimeError("current drone number doesn't match orders")
+            starts = []
+            for drone_aid in range(num_drones):
+                starts.append([swpos_res.x[drone_aid], swpos_res.y[drone_aid]])
+            return starts
+            
 
 
     def _spin_once(self):
@@ -111,11 +175,17 @@ class RosRrtWrapper(object):
 
     def _planif_assign(self):
         map_array = self._build_map_array()
-        starts, ends = self._read_admiral_orders()
+        _, ends = self._read_admiral_orders()
+        try:
+            starts = self._get_current_positions()
+        except RuntimeError as _:
+            rospy.logerr("Detected inconsistent drone number in order vs reality. Skipping current planification.")
+            return False, None
+
         rrt_multi = rrt.arrts_multi.RRT(
-            num_trees=self.num_drones, starts=starts, goals=ends, occupancyGrid=map_array, expandDis=0.5, maxIter=200)
+            num_trees=self.num_drones, starts=starts, goals=ends, occupancyGrid=map_array, expandDis=self.pm_expand_distance, maxIter=self.pm_iterations)
         planning_ok, rrt_results, total_cost, perm = rrt_multi.Planning(
-            animation=False)
+            animation=self.pm_debug_animation)
 
         if not planning_ok:
             rospy.logerr(
@@ -209,9 +279,7 @@ class RosRrtWrapper(object):
         msg = CaptainOrders()
 
         msg.header.frame_id = '/map'
-        msg.header.seq = self.orders_seq
         msg.header.stamp = rospy.Time.now()
-        self.orders_seq += 1
 
         msg.num_drones = res_wrapper.num_drones
         msg.drone_association = res_wrapper.perm
@@ -257,7 +325,6 @@ class RosRrtWrapper(object):
         viz = Marker()
         viz.header.frame_id = '/map'
         viz.header.stamp = rospy.Time.now()
-        viz.header.seq = self.viz_seq
 
         viz.action = viz.MODIFY
         viz.ns = 'paths'

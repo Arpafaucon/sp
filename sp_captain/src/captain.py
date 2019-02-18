@@ -14,12 +14,7 @@ from visualization_msgs.msg import Marker
 
 from ros_rrt_wrapper import RosRrtWrapper
 
-QUEUE_SIZE = 5
-ORDERS_TOPIC = '/sp/admiral_orders'
-STATUS_TOPIC = '/sp/captain_orders'
-VIZ_TOPIC = '/sp/captain_viz'
-MAP_TOPIC = '/map'
-RATE = 1
+
 
 
 class Captain(object):
@@ -33,21 +28,10 @@ class Captain(object):
     """
 
     def __init__(self):
-        rospy.init_node(name="captain")
+        
 
-        self.orders_pub = rospy.Publisher(
-            STATUS_TOPIC, CaptainOrders, queue_size=QUEUE_SIZE)
+        self.rrt_wrapper = RosRrtWrapper()
 
-        self.viz_pub = rospy.Publisher(VIZ_TOPIC, Marker, queue_size=QUEUE_SIZE)
-
-        self.rrt_wrapper = RosRrtWrapper(self.orders_pub, self.viz_pub)
-
-        self.orders_sub = rospy.Subscriber(
-            ORDERS_TOPIC, data_class=AdmiralOrders, callback=self.rrt_wrapper.set_orders)
-        self.map_sub = rospy.Subscriber(
-            MAP_TOPIC, data_class=OccupancyGrid, callback=self.rrt_wrapper.set_map)
-
-        self.rate = rospy.Rate(RATE)
         rospy.loginfo('Captain init done')
 
     def _compute_paths(self):
@@ -70,22 +54,6 @@ class Captain(object):
             ps.print_stats(10)
             # print(s.getvalue())
             # exit()
-
-
-            # self._publish_status(results)
-
-    # def _publish_status(self, results):
-    #     stat = CaptainStatus()
-    #     stat.num_drones = results.num_drones
-    #     stat.drone_association = results.perm
-
-    #     stat.total_distance = results.total_cost
-    #     stat.current_xs = self.orders.current_xs
-    #     stat.current_ys = self.orders.current_ys
-    #     stat.target_xs = self.orders.target_xs
-    #     stat.target_ys = self.orders.target_ys
-    #     self.orders_pub.publish(stat)
-    #     rospy.loginfo('Captain published status')
 
     def spin(self):
         while not rospy.is_shutdown():
