@@ -22,7 +22,7 @@ class Lookout:
         self.rate_ros = rospy.Rate(self.rate_hz)
         # Allocation subscriber
         self.swarm_alloc_sub = rospy.Subscriber(
-            'sp/swarm_allocation', SwarmAllocation, self._cb_swarm_alloc, None)
+            '/sp/swarm_allocation', SwarmAllocation, self._cb_swarm_alloc, None)
         self.swarm_alloc_msg = None
         # Position publisher
         self.swarm_pos_pub = rospy.Publisher(
@@ -61,16 +61,20 @@ class Lookout:
         ad_position_topic = "/{}/local_position".format(ad_namespace)
         local_position_msg = rospy.wait_for_message(
             ad_position_topic, GenericLogData)
-        coord_array = local_position_msg.values
+        coord_array = [0] * 6
+        # copy x, y, z as is
+        for i in range(0, 3):
+            coord_array[i] = local_position_msg.values[i]
         # converts angles to radian
         for i in range(3, 6):
-            coord_array[i] *= math.pi / 180.
+            coord_array[i] =  local_position_msg.values[i] * math.pi / 180.
         # x = local_position_msg.values[0]
         # y = local_position_msg.values[1]
         # z = local_position_msg.values[2]
         # r = local_position_msg.values[3]
         # p = local_position_msg.values[4]
         # yaw = local_position_msg.values[5]
+        print coord_array
         return coord_array, ad_namespace
 
     def _publish_swarm_pose_stamped(self, swarm_pos):
