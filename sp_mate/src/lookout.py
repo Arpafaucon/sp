@@ -2,7 +2,7 @@
 """
 Lookout node
 """
-
+import math
 import rospy
 
 from geometry_msgs.msg import PoseStamped
@@ -46,19 +46,32 @@ class Lookout:
         self.swarm_alloc_msg = msg
 
     def _get_drone_pos(self, drone_active_id):
+        """
+        Get active drone position
+        
+        Args:
+            drone_active_id (int): id of active drone
+        
+        Returns:
+            list[6*float]: array of coordinates x, y, z (meters), roll, pitch, yaw (radians)
+        """
         # self.swarm_alloc_msg = SwarmAllocation()
         assert drone_active_id < self.swarm_alloc_msg.num_drones_active
         ad_namespace = self.swarm_alloc_msg.active_drones_namespaces[drone_active_id]
         ad_position_topic = "/{}/local_position".format(ad_namespace)
         local_position_msg = rospy.wait_for_message(
             ad_position_topic, GenericLogData)
+        coord_array = local_position_msg.values
+        # converts angles to radian
+        for i in range(3, 6):
+            coord_array[i] *= math.pi / 180.
         # x = local_position_msg.values[0]
         # y = local_position_msg.values[1]
         # z = local_position_msg.values[2]
         # r = local_position_msg.values[3]
         # p = local_position_msg.values[4]
         # yaw = local_position_msg.values[5]
-        return local_position_msg.values, ad_namespace
+        return coord_array, ad_namespace
 
     def _publish_swarm_pose_stamped(self, swarm_pos):
         for drone_pos in swarm_pos:
