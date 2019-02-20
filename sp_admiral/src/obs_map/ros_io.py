@@ -9,15 +9,14 @@ import time
 
 from nav_msgs.msg import OccupancyGrid
 from sp_core.msg import AdmiralStatus, AdmiralOrders, SwarmPosition
-# from geometry_msgs.msg import Quaternion
 from tf.transformations import euler_from_quaternion
 
 from sp_admiral.srv import StartAdmiral, StartAdmiralRequest, StartAdmiralResponse
 from sp_lookout.srv import SwarmPositionSrv, SwarmPositionSrvResponse
 
 
-from .constants import M, Parameters
-from .support import _prepare_map
+from constants import M, Parameters
+from support import _prepare_map
 
 
 DEFAULT_PARAM_NS = "/sp/admiral"

@@ -25,9 +25,9 @@ array[line, column, mode]
 
 import rospy
 
-from obs_map.src.support import score_generation_step, reap_state_score
-from obs_map.src.ros_io import AdmiralRosInterface
-from obs_map.src.annealing import SimulAnnealingOptimisation
+from obs_map.support import score_generation_step, reap_state_score
+from obs_map.ros_io import AdmiralRosInterface
+from obs_map.annealing import SimulAnnealingOptimisation
 
 def rosmain():
     """
@@ -89,4 +89,6 @@ def rosmain():
 
 if __name__ == '__main__':
     # main()
+    import sys
+    print(sys.version_info)
     rosmain()

@@ -7,10 +7,10 @@ import random
 import math
 import copy
 
-import obs_map.src.support as obm
+import obs_map.support as obm
 
 
-from .constants import M, SMA_MAX_RETRY_STEP, PHY_WALL_THRES
+from constants import M, SMA_MAX_RETRY_STEP, PHY_WALL_THRES
 
 EVT_STEP = 1
 EVT_CONVERGE = 2

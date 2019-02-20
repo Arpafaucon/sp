@@ -9,14 +9,16 @@ def _enum(**enums):
     return type('Enum', (), enums)
 
 
-M = _enum(CONST=0,
-          SCORE=1,
-          PHY=2)
+# M = _enum(CONST=0,
+#           SCORE=1,
+#           PHY=2)
 
-# class M(object):
-#     CONST= 0
-#     SCORE=1
-#     PHY = 2
+
+
+class M(object):
+    CONST= 0
+    SCORE=1
+    PHY = 2
 
 PHY_WALL_THRES = 5
 
