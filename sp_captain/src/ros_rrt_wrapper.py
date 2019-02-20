@@ -26,6 +26,7 @@ PUB_CAPTAIN_VIZ = '/sp/captain_viz'
 
 ROOT_NS = "/sp/captain/"
 
+
 class RrtWrapperResults(object):
     def __init__(self):
         self.num_drones = None
@@ -68,32 +69,29 @@ class RosRrtWrapper(object):
         self.orders_pub = rospy.Publisher(
             PUB_CAPTAIN_ORDERS, CaptainOrders, queue_size=QUEUE_SIZE)
 
-        self.viz_pub = rospy.Publisher(PUB_CAPTAIN_VIZ, Marker, queue_size=QUEUE_SIZE)
+        self.viz_pub = rospy.Publisher(
+            PUB_CAPTAIN_VIZ, Marker, queue_size=QUEUE_SIZE)
         self.viz_scale = Vector3()
         self.viz_scale.x = 0.02
         self.viz_color = ColorRGBA()
         self.viz_color.r = self.viz_color.a = self.viz_color.g = 0.9
 
-
         # -----------------
         # Parameters
         self.pm_iterations = int(rospy.get_param(ROOT_NS+"iterations"))
-        self.pm_expand_distance = float(rospy.get_param(ROOT_NS+"expand_distance"))
+        self.pm_expand_distance = float(
+            rospy.get_param(ROOT_NS+"expand_distance"))
         self.pm_rate = float(rospy.get_param(ROOT_NS+"rate"))
         self.rate_ros = rospy.Rate(self.pm_rate)
-        self.pm_debug_animation = bool(rospy.get_param(ROOT_NS+"debug_animation", default=False))
+        self.pm_debug_animation = bool(rospy.get_param(
+            ROOT_NS+"debug_animation", default=False))
         if self.pm_debug_animation:
-            rospy.logwarn("Debug animation is enabled. This will SLOW DOWN captain search A LOT (but apparently you need it anyway to figure out something). ")
-
-
-
-
+            rospy.logwarn(
+                "Debug animation is enabled. This will SLOW DOWN captain search A LOT (but apparently you need it anyway to figure out something). ")
 
         rospy.wait_for_service(SRV_SWARM_POSITION)
-        self.svp_swarm_position = rospy.ServiceProxy(SRV_SWARM_POSITION, SwarmPositionSrv)
-        
-
-
+        self.svp_swarm_position = rospy.ServiceProxy(
+            SRV_SWARM_POSITION, SwarmPositionSrv)
 
     def set_map(self, map_msg):
         rospy.loginfo_throttle(1, "Captain got map msg")
@@ -119,7 +117,6 @@ class RosRrtWrapper(object):
         with self.orders_lock:
             self.orders = orders_msg
 
-        
     def spin_once_rate(self):
         self._spin_once()
         self.rate_ros.sleep()
@@ -127,10 +124,10 @@ class RosRrtWrapper(object):
     def _get_current_positions(self):
         """
         Call location service to get current drone positions
-        
+
         Raises:
             RuntimeError: if current drone number doesn't match the one we got from the orders. In that case, the best is to signal the issue and wait for next orders
-        
+
         Returns:
             array[num_drones*array[2*float]]: list of starting position in the form [ [x1, y1], [x2, y2], ...]
         """
@@ -141,10 +138,12 @@ class RosRrtWrapper(object):
                 raise RuntimeError("current drone number doesn't match orders")
             starts = []
             for drone_aid in range(num_drones):
-                starts.append([swpos_res.x[drone_aid], swpos_res.y[drone_aid]])
+                wx = swpos_res.x[drone_aid]
+                wy = swpos_res.y[drone_aid]
+                gx, gy = self._tf_world_to_map(wx, wy)
+                rospy.loginfo("got drone position on grid : {} ; {}".format(gx, gy))
+                starts.append([gx, gy])
             return starts
-            
-
 
     def _spin_once(self):
         with self.orders_lock:
@@ -179,7 +178,8 @@ class RosRrtWrapper(object):
         try:
             starts = self._get_current_positions()
         except RuntimeError as _:
-            rospy.logerr("Detected inconsistent drone number in order vs reality. Skipping current planification.")
+            rospy.logerr(
+                "Detected inconsistent drone number in order vs reality. Skipping current planification.")
             return False, None
 
         rrt_multi = rrt.arrts_multi.RRT(
@@ -199,10 +199,10 @@ class RosRrtWrapper(object):
             world_path = self._tf_rrt_result(rrt_path)
             world_rrt_results.append(world_path)
             print("{}->{} valid ! cost={}, pathlen={}"
-                    .format(world_path.i_start,
-                            world_path.i_end,
-                            world_path.cost,
-                            len(world_path.path)))
+                  .format(world_path.i_start,
+                          world_path.i_end,
+                          world_path.cost,
+                          len(world_path.path)))
 
         wrap_res = RrtWrapperResults()
         wrap_res.num_drones = self.num_drones
