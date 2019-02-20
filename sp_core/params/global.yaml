@@ -1,7 +1,7 @@
 mate:
   # SETUP PARAMETERS
   # set to false to use real robots
-  simulation_mode: true
+  # simulation_mode: true
   # number of drones max
   num_drones_total: 4
   # target number of active drones
@@ -17,11 +17,14 @@ mate:
   ]
   # OPERATIVE PARAMETERS
   # control loop rate, Hz
-  rate: 2
+  control_rate: 2
   # flight altitude, m
   altitude : 1
   # tolerance radius around goals, m
   goal_radius : .1
+
+  # DRONE MANAGEMENT
+  allocation_rate: 1
 
 
 admiral:
@@ -39,17 +42,18 @@ admiral:
   rate: .15
   # score increment per cycle
   score_step_increment: 4
+
 captain:
   # update check rate, in Hz
   rate: .4
   # max number of iterations to find trajectory tree
-  iterations: 400
+  iterations: 200
   # expand distance, in meters
   # if map is convex enough, you can increase that distance to allow faster waypoint calculation. However, you risk that some trajectories cross  wall corners
-  expand_distance: .7
+  expand_distance: 1.5
   # enabling the debug animation window will show internal RRT process.
   # this will slow down **A LOT** the process
-  debug_animation: True
+  debug_animation: False
 
 lookout:
   # position update rate, Hz
