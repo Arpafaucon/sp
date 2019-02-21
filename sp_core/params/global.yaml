@@ -3,7 +3,7 @@ mate:
   # set to false to use real robots
   # simulation_mode: true
   # number of drones max
-  num_drones_total: 4
+  num_drones_total: 2
   # target number of active drones
   num_drones_active: 2
   # Hardware addresses of real drones
@@ -20,6 +20,14 @@ mate:
   control_rate: 2
   # flight altitude, m
   altitude : 1
+  # tolerance around landing and takeoff altitude objectives, 
+  # x means:
+  #  - takeoffs are finished once z > (1-x)*altitude
+  #  - landings are finished once z <     x*altitude
+  transition_threshold: .1
+  # duration goal for takeoffs and landing, s
+  # the longer it is set, the more stable the drones will be
+  transition_duration: 2
   # tolerance radius around goals, m
   goal_radius : .1
 
