@@ -1,8 +1,12 @@
 Header header
 
-int8 num_drones_active
+string MASK_ALL=all
+string MASK_ACTIVE=active
 
-# size num_drones_active
+string mask
+int8 num_drones
+
+# size num_drones
 float64[] x
 float64[] y
 float64[] z
