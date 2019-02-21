@@ -1,5 +1,6 @@
+bool active_only
 ---
-int8 num_active_drones
+int8 num_drones
 
 # size num_active_drones
 float64[] x
