@@ -8,6 +8,9 @@ import sys
 import subprocess
 import select
 
+from typing import Union
+
+x = 1  # type: Union[int, str]
 
 def start_cf_server(launch):
     package = 'crazyflie_gazebo'

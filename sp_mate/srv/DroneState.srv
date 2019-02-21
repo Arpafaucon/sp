@@ -1,0 +1,8 @@
+int8 STATE_OK = 1
+int8 STATE_FAULTY = 2
+
+# drone id
+int8 connected_id
+# new state to register : see above for values
+int8 state
+---

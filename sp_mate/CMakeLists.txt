@@ -56,6 +56,8 @@ add_service_files(
   Land.srv
   TakeOff.srv
   ActiveDroneInfo.srv
+  DroneState.srv
+  ActiveTarget.srv
 )
 
 ## Generate actions in the 'action' folder

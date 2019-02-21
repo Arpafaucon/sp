@@ -1,0 +1,6 @@
+# target number of active drones
+int8 active_target
+
+---
+# - the requested number if it's possible, or the best available at this point
+int8 active_target_ok

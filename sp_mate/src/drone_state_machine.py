@@ -1,6 +1,7 @@
 from __future__ import print_function
 
-from typing import Callable, List
+from typing import Callable, List, Any
+from copy import copy
 
 from enum import Enum
 
@@ -42,54 +43,65 @@ class UpdateType(object):
 
 class DroneAllocation(object):
     def __init__(self):
-        self.num_active: int = 0
-        self.ad_connected_drones: List[int] = None
-        self.cd_active_drones: List[int] = None
-        self.state: List[STATE] = None
-        self.mode: List[MODE] = None
+        self.num_active = 0  # type: int
+        self.ad_connected_drones = None  # type: List[int]
+        self.cd_active_drones = None  # type: List[int]
+        self.state = None  # type: List[STATE]
+        self.mode = None  # type: List[MODE]
 
 
 class DroneStateMachine(object):
     @staticmethod
-    def new(num_connected_drones: int):
+    def new(num_connected_drones):
+        # type: (int) -> DroneStateMachine
         state = [STATE.OK]*num_connected_drones
         mode = [MODE.GROUND]*num_connected_drones
         da = DroneStateMachine(state, mode)
         return da
 
-    def __init__(self, state: List[STATE], mode: List[MODE]):
+    def __init__(self, state, mode):
+        # type: (List[STATE], List[MODE]) -> None
         self._state = state
         self._mode = mode
         self._target_active = 0
-        self._mode_changed = lambda: print("No mode callback set")
-        self._state_changed = lambda: print("No state callback set")
-        self._update_list = []
+        self._mode_changed = lambda *args, **kwargs: print("No mode callback set")
+        self._state_changed = lambda *args, **kwargs: print("No state callback set")
+        # TODO: check Thread safety
+        self._update_list = []  # type: List[Any]
 
-    def set_faulty(self, drone_index: int):
+    def set_faulty(self, drone_index):
+        # type: (int) -> None
         self._state[drone_index] = STATE.FAULTY
 
-    def on_mode_change(self, mode_changed_cb: Callable[int, MODE, MODE]):
+    def on_mode_change(self, mode_changed_cb):
+        # type: (Callable[int, MODE, MODE]) -> None
         self._mode_changed = mode_changed_cb
 
-    def on_state_change(self, state_changed_cb: Callable[int, STATE, STATE]):
+    def on_state_change(self, state_changed_cb):
+        # type: (Callable[int, STATE, STATE]) -> None
         self._state_changed = state_changed_cb
 
     def __str__(self):
+        # type () -> str
         return "DSM[{}] -> {}\n{}\n{}".format(len(self._mode),
                                               self._target_active,
-                                              '\t'.join(self._state),
-                                              '\t'.join(self._mode))
+                                              '\t'.join(str(state)
+                                                        for state in self._state),
+                                              '\t'.join(str(mode) for mode in self._mode))
 
     def spin(self):
+        # type: () -> DroneAllocation
         # get status updates from the outside
         self.apply_updates()
 
         # land all flying faulty drones
-        while STATE.FAULTY in self._state:
-            faulty_drone = self._state.index(STATE.FAULTY)
-            if self._mode[faulty_drone] in [MODE.TAKEOFF, MODE.ACTIVE]:
-                # landing faulty drone
-                self._set_drone(faulty_drone, mode=MODE.LANDING)
+        for ix, state in enumerate(self._state):
+            if state == STATE.FAULTY:
+                mode = self._mode[ix]
+                if mode in [MODE.TAKEOFF, MODE.ACTIVE]:
+                    # landing faulty drone
+                    print("landing faulty drone {}".format(ix))
+                    self._set_drone(ix, mode=MODE.LANDING)
 
         # check if target is met
         current_active = self._mode.count(MODE.ACTIVE)\
@@ -101,14 +113,18 @@ class DroneStateMachine(object):
 
         elif delta_active > 0:
             # too much drones flying - must land some
-            print("landing {}".format(delta_active))
+            print("landing {} more drones".format(delta_active))
             candidate_drones = [True if (mode in [MODE.ACTIVE, MODE.TAKEOFF]
                                          and state == STATE.OK)
                                 else False
                                 for mode, state in zip(self._mode, self._state)]
-            for _ in range(delta_active):
-                ad_index = candidate_drones.index(True)
-                self._set_drone(ad_index, STATUS_READY)
+            to_land = delta_active
+            for drone_ix, candidate in enumerate(candidate_drones):
+                if candidate:
+                    self._set_drone(drone_ix, mode=MODE.LANDING)
+                    to_land -= 1
+                if to_land <= 0:
+                    break
 
         elif delta_active < 0:
             # too few drones
@@ -119,10 +135,13 @@ class DroneStateMachine(object):
 
             current_ready = candidate_drones.count(True)
             to_takeoff = min(abs(delta_active), current_ready)
-            print("taking off {}".format(to_takeoff))
-            for _ in range(to_takeoff):
-                ad_index = candidate_drones.index(True)
-                self._set_drone(ad_index, mode=MODE.LANDING)
+            print("taking off {} more drones".format(to_takeoff))
+            for drone_ix, candidate in enumerate(candidate_drones):
+                if candidate:
+                    self._set_drone(drone_ix, mode=MODE.TAKEOFF)
+                    to_takeoff -= 1
+                if to_takeoff <= 0:
+                    break
 
         return self._build_drone_allocation()
 
@@ -143,19 +162,19 @@ class DroneStateMachine(object):
 
         da.cd_active_drones = cd_active
 
-        da.state = self._state.copy()
-        da.mode = self._mode.copy()
-
+        da.state = copy(self._state)
+        da.mode = copy(self._mode)
         return da
 
-    def _set_drone(self, drone_index: int, state: STATE = None, mode: MODE = None):
+    def _set_drone(self, drone_index, state=None, mode=None):
+        # type: (int, STATE, MODE) -> None
         if state is not None:
             old_state = self._state[drone_index]
             print("{} : {} -> {}".format(drone_index,
                                          old_state, state))
             old_state = state
-            self._mode_changed(drone_index=drone_index, old_mode=mode,
-                               new_mode=None, old_state=old_state, new_state=state)
+            self._state_changed(drone_index=drone_index,
+                                old_state=old_state, new_state=state)
 
         if mode is not None:
             old_mode = self._mode[drone_index]
@@ -163,14 +182,17 @@ class DroneStateMachine(object):
                                          old_mode, mode))
             self._mode[drone_index] = mode
             self._mode_changed(drone_index, old_mode=old_mode,
-                               new_mode=mode, old_state=None, new_state=None)
+                               new_mode=mode)
 
-    def register_drone_update(self, drone_index, state: STATE = None, mode: MODE = None):
+    def register_drone_update(self, drone_index, state=None, mode=None):
+        # type (int, STATE, MODE) -> None
         self._update_list.append(
             (UpdateType.MODESTATE, drone_index, state, mode))
 
-    def register_active_target_update(self, new_active_target: int):
+    def register_active_target_update(self, new_active_target):
+        # type (int) -> None
         self._update_list.append((UpdateType.NUM_ACTIVE, new_active_target))
+        print("active target is now {}".format(new_active_target))
 
     def apply_updates(self):
         for update in self._update_list:
@@ -195,7 +217,7 @@ def test():
     da.spin()
     print(da)
 
-    da._set_drone(1, STATUS_FAULTY)
+    da._set_drone(1, state=STATE.FAULTY)
     da.spin()
     print(da)
 
