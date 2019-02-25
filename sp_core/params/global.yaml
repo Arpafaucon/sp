@@ -27,7 +27,7 @@ mate:
   transition_threshold: .1
   # duration goal for takeoffs and landing, s
   # the longer it is set, the more stable the drones will be
-  transition_duration: 2
+  transition_duration: 5
   # tolerance radius around goals, m
   goal_radius : .1
 

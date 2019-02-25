@@ -18,6 +18,7 @@
   <arg name="enable_logging_battery" default="false" />
   <arg name="enable_logging_packets" default="false" />
 
+  <arg name="enable_light" default="false" />
   <arg name="nbQuads" default="4" />
   <arg name="cfPrefix" default="cf" />
   <arg name="uri" default="INADDR_ANY://19950"/>
@@ -62,6 +63,7 @@
       <arg name="x" default="$(arg x_1)"/>
       <arg name="y" default="$(arg y_1)"/>
       <arg name="z" default="$(arg z_1)"/>
+      <arg name="enable_light" value="$(arg enable_light)"/>
     </include>
   </group>
 
@@ -73,6 +75,7 @@
       <arg name="x" default="$(arg x_2)"/>
       <arg name="y" default="$(arg y_2)"/>
       <arg name="z" default="$(arg z_2)"/>
+       <arg name="enable_light" value="$(arg enable_light)"/>
     </include>
   </group>
 
