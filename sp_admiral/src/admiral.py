@@ -64,22 +64,24 @@ def rosmain():
         # here : simplified : current state is last target state
         state_curr, num_drones = ros_if.get_drone_positions()
 
+        if num_drones > 0:
+            # there is something to optimize...
 
-        # we update score map taking into account current state (score at t0)
-        # if not first:
-        reap_state_score(obs_map, state_curr, params.DRONE_SIGHT_RADIUS)
-            # first = False
-        # map is updated to next target time (scores of t0+T)
-        score_generation_step(obs_map, params.SCORE_STEP_INCREMENT)
+            # we update score map taking into account current state (score at t0)
+            # if not first:
+            reap_state_score(obs_map, state_curr, params.DRONE_SIGHT_RADIUS)
+                # first = False
+            # map is updated to next target time (scores of t0+T)
+            score_generation_step(obs_map, params.SCORE_STEP_INCREMENT)
 
-        # run optimisation to find target for t0+T
-        state_target, score_target, temp = optim.simul_annealing_simple(
-            state_curr, n_iterations=params.N_ITERATIONS, temp0=params.INITIAL_TEMP)
-        rospy.loginfo('converged with score {}'.format(score_target))
+            # run optimisation to find target for t0+T
+            state_target, score_target, temp = optim.simul_annealing_simple(
+                state_curr, n_iterations=params.N_ITERATIONS, temp0=params.INITIAL_TEMP)
+            rospy.loginfo('converged with score {}'.format(score_target))
 
-        # publish target
-        ros_if.publish_msgs(obs_map, state_curr, state_target, num_drones,
-                            params.N_ITERATIONS, score_target, score_target)
+            # publish target
+            ros_if.publish_msgs(obs_map, state_curr, state_target, num_drones,
+                                params.N_ITERATIONS, score_target, score_target)
 
         # ... and sleep until t0+T
         rate.sleep()
@@ -89,6 +91,4 @@ def rosmain():
 
 if __name__ == '__main__':
     # main()
-    import sys
-    print(sys.version_info)
     rosmain()

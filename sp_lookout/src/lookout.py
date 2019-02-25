@@ -71,7 +71,9 @@ class Lookout:
             if self.swarm_log is None:
                 return None
             drone_pos = self.swarm_log[active_id].position
-            return drone_pos
+            res = DronePositionResponse()
+            res.position = drone_pos
+            return res
 
     def _srv_swarm_position(self, req):
         active_only = req.active_only

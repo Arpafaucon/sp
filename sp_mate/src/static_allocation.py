@@ -44,7 +44,7 @@ class StaticSwarmAllocation:
 
         self.swarm_allocation_pub = rospy.Publisher("/sp/swarm_allocation", SwarmAllocation, latch=True, queue_size=10)
 
-        self.rate_hz = 0.5;
+        self.rate_hz = 0.5
         self.rate_ros = rospy.Rate(self.rate_hz)
 
         self.takeoff_srv = rospy.Service("/sp/takeoff", TakeOff, self.srv_takeoff)

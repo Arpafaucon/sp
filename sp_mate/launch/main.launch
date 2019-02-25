@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
 <launch>
     <node pkg="sp_mate" type="dumb_control.py" name="control" output="screen"/>
-    <node pkg="sp_mate" type="static_allocation.py" name="allocation" output="screen" required="true"/>
+    <node pkg="sp_mate" type="dynamic_allocation.py" name="allocation" output="screen" required="true"/>
 </launch>

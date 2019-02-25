@@ -6,14 +6,15 @@ import rospy
 from crazyflie_driver.msg import GenericLogData, Position
 from crazyflie_driver.srv import GoTo, GoToRequest
 from sp_core.msg import CaptainOrders
-from sp_mate.srv import ActiveDroneInfo, DronePosition
+from sp_mate.srv import ActiveDroneInfo
+from sp_lookout.srv import DronePosition
 
 from sp_core.tools.rospools import PublisherPool, ServiceProxyPool
 
 DRONE_INFO_SRV = '/sp/active_drone_info'
 DRONE_LOCATION_SRV = '/sp/drone_position'
 
-RATE_PM = '/sp/mate/rate'
+RATE_PM = '/sp/mate/control_rate'
 GOAL_RADIUS_PM = "/sp/mate/goal_radius"
 ALTITUDE_PM = "/sp/mate/altitude"
 
@@ -156,7 +157,6 @@ class DumbControl:
             pass
 
         # at this point, `target` is the next goal not yet reached
-        a = 2
         target_6d = [0. for _ in range(6)]
 
         #

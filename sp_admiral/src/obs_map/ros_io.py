@@ -8,10 +8,11 @@ import numpy as np
 import time
 
 from nav_msgs.msg import OccupancyGrid
-from sp_core.msg import AdmiralStatus, AdmiralOrders, SwarmPosition
+from sp_core.msg import AdmiralStatus, AdmiralOrders
 from tf.transformations import euler_from_quaternion
 
 from sp_admiral.srv import StartAdmiral, StartAdmiralRequest, StartAdmiralResponse
+
 from sp_lookout.srv import SwarmPositionSrv, SwarmPositionSrvResponse
 
 
@@ -346,12 +347,11 @@ class AdmiralRosInterface(object):
         self.score_pub.publish(grid)
 
     def get_drone_positions(self):
-        # swpos_msg = rospy.wait_for_message(SWARM_POSITION_TOPIC, SwarmPosition)
-        swarm_position = self.svp_swarm_position()
+        swarm_position = self.svp_swarm_position(active_only=True)
 
         x = swarm_position.x
         y = swarm_position.y
-        num_drones = swarm_position.num_active_drones
+        num_drones = swarm_position.num_drones
         rospy.loginfo( "got position on world [{}]: {}".format(num_drones, list(zip(x, y))))
         state = []
         for i_drone in range(num_drones):

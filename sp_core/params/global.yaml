@@ -3,7 +3,7 @@ mate:
   # set to false to use real robots
   # simulation_mode: true
   # number of drones max
-  num_drones_total: 2
+  num_drones_total: 4
   # target number of active drones
   num_drones_active: 2
   # Hardware addresses of real drones

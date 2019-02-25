@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python
 """
 static allocation server
 """
@@ -11,9 +11,16 @@ from sp_lookout.msg import SwarmPosition
 import time
 from drone_state_machine import MODE, STATE, DroneStateMachine, DroneAllocation
 
+NAME = "dynamic allocation"
 
 PUB_ALLOCATION = "/sp/swarm_allocation"
 SUB_POSITION = "/sp/all_swarm_position"
+
+SRV_ACTIVE_DRONE_INFO = "/sp/active_drone_info"
+SRV_ACTIVE_TARGET = "/sp/active_target"
+SRV_SET_DRONE_STATE = "/sp/set_drone_state"
+SRV_TAKEOFF = "/sp/takeoff"
+SRV_LAND = "/sp/land"
 
 
 class DynamicAllocation(object):
@@ -24,6 +31,9 @@ class DynamicAllocation(object):
     @staticmethod
     def namespace(drone_id):
         return "cf{}".format(drone_id+1)
+
+    
+    
 
     def __init__(self):
 
@@ -45,8 +55,12 @@ class DynamicAllocation(object):
         # self.svros_active_drone_info = rospy.Service(
         #     "/sp/active_drone_info", ActiveDroneInfo, self.srv_active_drone_info)
         self.svros_active_target = rospy.Service(
-            "/sp/active_target", ActiveTarget, self.srv_active_target)
-        self.svros_drone_state = rospy.Service("/sp/set_drone_state", DroneState, self.srv_set_drone_state)
+            SRV_ACTIVE_TARGET, ActiveTarget, self.srv_active_target)
+        self.svros_drone_state = rospy.Service(SRV_SET_DRONE_STATE, DroneState, self.srv_set_drone_state)
+        self.svros_active_drone_info = rospy.Service(SRV_ACTIVE_DRONE_INFO, ActiveDroneInfo, self.srv_active_drone_info)
+        self.svros_takeoff = rospy.Service(SRV_TAKEOFF, TakeOff, self.srv_takeoff)
+        self.svros_land = rospy.Service(SRV_LAND, Land, self.srv_land)
+        
         # Params
         self.pm_num_connected_drones = int(
             rospy.get_param("/sp/mate/num_drones_total"))
@@ -97,13 +111,51 @@ class DynamicAllocation(object):
         self.ms_machine.register_active_target_update(target)
         return ActiveTargetResponse(active_target_ok=target)
 
+    def srv_active_drone_info(self, req):
+        # type : (ActiveDroneInfoRequest) -> ActiveDroneInfoResponse
+        if self.last_da is None:
+            # haven't received a MS machine update yet
+            return None
+
+        aid = req.active_id
+        res = ActiveDroneInfoResponse()
+        cid = self.last_da.ad_connected_drones[aid]
+        res.connected_id = cid
+        res.status = self.last_da.state[cid].value + self.last_da.mode[cid].value
+        res.is_real = False
+        res.namespace = DynamicAllocation.namespace(cid)
+        return res
+
+    def _interpret_set(self, request_id):
+        drone_set = []
+
+        if request_id >=0:
+            drone_set = [request_id]
+        elif request_id == TakeOffRequest.ALL:
+            drone_set = list(range(self.pm_num_connected_drones))
+        elif request_id == TakeOffRequest.ACTIVE:
+            drone_set = self.last_da.ad_connected_drones
+        else:
+            # parameter makes no sense
+            return None
+        rospy.logdebug("got swarm service request with selector {}. Selecting {}".format(request_id, drone_set))
+        return drone_set
+
     def srv_takeoff(self, req):
         # type: (TakeOffRequest)->TakeOffResponse
-        return None
+        drone_set = self._interpret_set(req.id)
+        for cid in drone_set:
+            drone = self.swarm[cid]
+            drone.takeoff(targetHeight=self.pm_altitude, duration=self.pm_transition_duration)
+        return TakeOffResponse(True)
 
     def srv_land(self, req):
         # type: (LandRequest)->LandResponse
-        return None
+        drone_set = self._interpret_set(req.id)
+        for cid in drone_set:
+            drone = self.swarm[cid]
+            drone.land(targetHeight=0., duration=self.pm_transition_duration)
+        return LandResponse(True)
 
     def spin(self):
         self._init_high_level()

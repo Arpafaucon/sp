@@ -131,10 +131,10 @@ class RosRrtWrapper(object):
         Returns:
             array[num_drones*array[2*float]]: list of starting position in the form [ [x1, y1], [x2, y2], ...]
         """
-        swpos_res = self.svp_swarm_position.call()
+        swpos_res = self.svp_swarm_position.call(active_only=True)
         with self.orders_lock:
             num_drones = self.orders.num_drones
-            if swpos_res.num_active_drones != self.orders.num_drones:
+            if swpos_res.num_drones != self.orders.num_drones:
                 raise RuntimeError("current drone number doesn't match orders")
             starts = []
             for drone_aid in range(num_drones):
