@@ -5,7 +5,7 @@
   <arg name="world_name" default="basic"/>
   <arg name="debug" default="false"/>
   <arg name="gui" default="false"/>
-  <arg name="paused" default="true"/>
+  <arg name="paused" default="false"/>
 
   <!-- Crazyflie arguments -->
   <arg name="enable_logging" default="true" />

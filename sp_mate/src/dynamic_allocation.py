@@ -2,14 +2,16 @@
 """
 static allocation server
 """
-from threading import RLock
+from threading import RLock, Thread
+import time
 import rospy
+
 from sp_core.msg import SwarmAllocation
 from crazyflie_gazebo.tools import crazyflie
-from sp_mate.srv import Land, TakeOff, LandRequest, LandResponse, TakeOffRequest, TakeOffResponse, ActiveDroneInfo, ActiveDroneInfoRequest, ActiveDroneInfoResponse, DroneState, DroneStateRequest, DroneStateResponse, ActiveTarget, ActiveTargetResponse
+from sp_mate.srv import Land, TakeOff, LandRequest, LandResponse, TakeOffRequest, TakeOffResponse, ActiveDroneInfo, ActiveDroneInfoResponse, DroneState, DroneStateRequest, DroneStateResponse, ActiveTarget, ActiveTargetResponse
 from sp_lookout.msg import SwarmPosition
-import time
 from drone_state_machine import MODE, STATE, DroneStateMachine, DroneAllocation
+from daemons import LandDaemon, TakeOffDaemon
 
 NAME = "dynamic allocation"
 
@@ -23,17 +25,22 @@ SRV_TAKEOFF = "/sp/takeoff"
 SRV_LAND = "/sp/land"
 
 
+
+
+
 class DynamicAllocation(object):
     """
     assumptions:
     - drone namespaces are 'cf<i>' , i starting from 1. So drone 0 has namespace 'cf1'
     """
     @staticmethod
-    def namespace(drone_id):
-        return "cf{}".format(drone_id+1)
+    def namespace(drone_id, absolute =False):
+        if absolute:
+            prefix = "/"
+        else:
+            prefix = ""
+        return "{}cf{}".format(prefix, drone_id+1)
 
-    
-    
 
     def __init__(self):
 
@@ -56,11 +63,14 @@ class DynamicAllocation(object):
         #     "/sp/active_drone_info", ActiveDroneInfo, self.srv_active_drone_info)
         self.svros_active_target = rospy.Service(
             SRV_ACTIVE_TARGET, ActiveTarget, self.srv_active_target)
-        self.svros_drone_state = rospy.Service(SRV_SET_DRONE_STATE, DroneState, self.srv_set_drone_state)
-        self.svros_active_drone_info = rospy.Service(SRV_ACTIVE_DRONE_INFO, ActiveDroneInfo, self.srv_active_drone_info)
-        self.svros_takeoff = rospy.Service(SRV_TAKEOFF, TakeOff, self.srv_takeoff)
+        self.svros_drone_state = rospy.Service(
+            SRV_SET_DRONE_STATE, DroneState, self.srv_set_drone_state)
+        self.svros_active_drone_info = rospy.Service(
+            SRV_ACTIVE_DRONE_INFO, ActiveDroneInfo, self.srv_active_drone_info)
+        self.svros_takeoff = rospy.Service(
+            SRV_TAKEOFF, TakeOff, self.srv_takeoff)
         self.svros_land = rospy.Service(SRV_LAND, Land, self.srv_land)
-        
+
         # Params
         self.pm_num_connected_drones = int(
             rospy.get_param("/sp/mate/num_drones_total"))
@@ -74,6 +84,8 @@ class DynamicAllocation(object):
         self.pmd_landed_thres = self.pm_altitude * self.pm_transition_threshold
         self.pmd_flying_thres = self.pm_altitude * \
             (1-self.pm_transition_threshold)
+        self.pm_detect_faults = bool(
+            rospy.get_param("/sp/detect_faults", False))
         self.pm_rate = float(rospy.get_param("/sp/mate/allocation_rate"))
         self.rate_ros = rospy.Rate(self.pm_rate)
 
@@ -86,6 +98,11 @@ class DynamicAllocation(object):
         # results
         self.last_da_lock = RLock()
         self.last_da = None  # type: DroneAllocation
+
+        # Transitions daemons
+        self.daemons = []
+
+        rospy.loginfo("Dynamic allocation init: done")
 
     def srv_set_drone_state(self, req):
         # type: (DroneStateRequest) -> DroneStateResponse
@@ -105,8 +122,8 @@ class DynamicAllocation(object):
         target = req.active_target
         if target > self.pm_num_connected_drones:
             target = self.pm_num_connected_drones
-        rospy.loginfo("New active target: {} [requested {}]".format(
-            target, req.active_target))
+        rospy.loginfo("New active target: %d [requested %d]",
+                      target, req.active_target)
 
         self.ms_machine.register_active_target_update(target)
         return ActiveTargetResponse(active_target_ok=target)
@@ -121,7 +138,8 @@ class DynamicAllocation(object):
         res = ActiveDroneInfoResponse()
         cid = self.last_da.ad_connected_drones[aid]
         res.connected_id = cid
-        res.status = self.last_da.state[cid].value + self.last_da.mode[cid].value
+        res.status = self.last_da.state[cid].value + \
+            self.last_da.mode[cid].value
         res.is_real = False
         res.namespace = DynamicAllocation.namespace(cid)
         return res
@@ -129,7 +147,7 @@ class DynamicAllocation(object):
     def _interpret_set(self, request_id):
         drone_set = []
 
-        if request_id >=0:
+        if request_id >= 0:
             drone_set = [request_id]
         elif request_id == TakeOffRequest.ALL:
             drone_set = list(range(self.pm_num_connected_drones))
@@ -138,7 +156,8 @@ class DynamicAllocation(object):
         else:
             # parameter makes no sense
             return None
-        rospy.logdebug("got swarm service request with selector {}. Selecting {}".format(request_id, drone_set))
+        rospy.logdebug("got swarm service request with selector %d. Selecting %s",
+                       request_id, drone_set)
         return drone_set
 
     def srv_takeoff(self, req):
@@ -146,7 +165,8 @@ class DynamicAllocation(object):
         drone_set = self._interpret_set(req.id)
         for cid in drone_set:
             drone = self.swarm[cid]
-            drone.takeoff(targetHeight=self.pm_altitude, duration=self.pm_transition_duration)
+            drone.takeoff(targetHeight=self.pm_altitude,
+                          duration=self.pm_transition_duration)
         return TakeOffResponse(True)
 
     def srv_land(self, req):
@@ -157,71 +177,95 @@ class DynamicAllocation(object):
             drone.land(targetHeight=0., duration=self.pm_transition_duration)
         return LandResponse(True)
 
+    def clean_daemons(self):
+        n = len(self.daemons)
+        for daemon_id in reversed(range(n)):
+            if self.daemons[daemon_id].complete:
+                del self.daemons[daemon_id]
+
     def spin(self):
         self._init_high_level()
         while not rospy.is_shutdown():
+            rospy.logdebug_throttle(2, "Allocation spinning")
             with self.last_da_lock:
                 allocation = self.ms_machine.spin()
                 self.last_da = allocation
             self.pub_allocation(allocation)
+            self.clean_daemons()
             self.rate_ros.sleep()
 
     def _init_high_level(self):
         # setup drones
         self.swarm = []
+        rospy.loginfo("Allocation: init High-level")
+        
         for cid in range(self.pm_num_connected_drones):
-            cd_namespace = self.namespace(cid)
+            cd_namespace = DynamicAllocation.namespace(cid, absolute=True)
             # FIXME: second argument is weird
             drone = crazyflie.Crazyflie(cd_namespace, cid)
             drone.enableHighLevel()
             self.swarm.append(drone)
+        rospy.loginfo("Allocation: init High-level controls succesful")
 
     def cb_swarm_position(self, msg):
         # type: (SwarmPosition) -> None
         """
-        Checks for transitions : 
+        Checks for transitions :
         LANDING -> GROUND once altitude is below (threshold * altitude)
         TAKEOFF -> ACTIVE once altitude is above (1 - threshold)*altitude
         """
         # for
+        rospy.loginfo_throttle(10, "Allocation got swarm position")
         assert msg.mask == SwarmPosition.MASK_ALL, "wrong subscription"
         assert msg.num_drones == self.pm_num_connected_drones, "consistent connected drones number"
         with self.last_da_lock:
             if self.last_da is None:
                 return
-            for cid in range(self.pm_num_connected_drones):
-                d_mode = self.last_da.mode[cid]
-                if d_mode == MODE.LANDING:
-                    # check if altitude is below threshold
-                    if msg.z[cid] < self.pmd_landed_thres:
-                        rospy.loginfo("Landing finished for {}".format(cid))
-                        self.ms_machine.register_drone_update(
-                            cid, mode=MODE.GROUND)
-                elif d_mode == MODE.TAKEOFF:
-                    # check if altitude is above threshold
-                    if msg.z[cid] > self.pmd_flying_thres:
-                        rospy.loginfo("TakeOff finished for {}".format(cid))
-                        self.ms_machine.register_drone_update(
-                            cid, mode=MODE.ACTIVE)
+            for daemon in self.daemons:
+                d_cid = daemon.cid
+                daemon.cb_position(msg.z[d_cid])
+            # for cid in range(self.pm_num_connected_drones):
+            #     d_mode = self.last_da.mode[cid]
+            #     if d_mode == MODE.LANDING:
+            #         # check if altitude is below threshold
+            #         if msg.z[cid] < self.pmd_landed_thres:
+            #             rospy.loginfo("Landing finished for {}".format(cid))
+            #             self.ms_machine.register_drone_update(
+            #                 cid, mode=MODE.GROUND)
+            #     elif d_mode == MODE.TAKEOFF:
+            #         # check if altitude is above threshold
+            #         if msg.z[cid] > self.pmd_flying_thres:
+            #             rospy.loginfo("TakeOff finished for {}".format(cid))
+            #             self.ms_machine.register_drone_update(
+            #                 cid, mode=MODE.ACTIVE)
 
     def cb_mode_changed(self, drone_index, old_mode, new_mode):
         # type: (int, MODE, MODE) -> None
         if old_mode in [MODE.GROUND, MODE.LANDING] and new_mode == MODE.TAKEOFF:
-            self.swarm[drone_index].takeoff(
-                targetHeight=self.pm_altitude,
-                duration=self.pm_transition_duration)
-            rospy.loginfo("Taking off {}".format(drone_index))
+            # takeoff daemon
+            daemon = TakeOffDaemon(drone_index, self.swarm[drone_index], self.pm_altitude, self.pmd_flying_thres,
+                                   self.pm_transition_duration, self.ms_machine)
+            self.daemons.append(daemon)
+            daemon.start()
+            # self.swarm[drone_index].takeoff(
+            #     targetHeight=self.pm_altitude,
+            #     duration=self.pm_transition_duration)
+            rospy.loginfo("Taking off %d", drone_index)
         if old_mode in [MODE.ACTIVE, MODE.TAKEOFF] and new_mode == MODE.LANDING:
-            self.swarm[drone_index].land(
-                targetHeight=0.,
-                duration=self.pm_transition_duration)
-            rospy.loginfo("Landing {}".format(drone_index))
+            # land daemon
+            daemon = LandDaemon(drone_index, self.swarm[drone_index], self.pm_altitude, self.pmd_landed_thres,
+                                self.pm_transition_duration, self.ms_machine)
+            self.daemons.append(daemon)
+            daemon.start()
+            # self.swarm[drone_index].land(
+            #     targetHeight=0.,
+            #     duration=self.pm_transition_duration)
+            rospy.loginfo("Landing %d", drone_index)
 
     def cb_state_changed(self, drone_index, old_state, new_state):
-        rospy.logwarn("cid# {} : state changed : {} to {}".format(
-            drone_index, old_state, new_state))
         # type: (int, STATE, STATE) -> None
-        pass
+        rospy.logwarn("cid# %d : state changed : %d to %d",
+                      drone_index, old_state, new_state)
 
     def pub_allocation(self, allocation):
          # type: (DroneAllocation) -> None
@@ -244,7 +288,7 @@ class DynamicAllocation(object):
 
         self.swarm_allocation_pub.publish(sa_msg)
         rospy.loginfo_throttle(
-            20, "publishing allocation at {} Hz".format(self.pm_rate))
+            20, "publishing allocation at %d Hz" % self.pm_rate)
 
 
 # NUM_D_CONNECTED = 4

@@ -36,27 +36,24 @@ class DroneMission:
     def __init__(self, mid=0):
         self.mission_id = mid
         self.active_id = None # int
-        self.conn_id = None # int
+        self.connected_id = None # int
         self.waypoints = None # list[(double, double, double)]
         self.current_wp = None # index in `waypoints`
         self.arrived = None # bool
         self.namespace = None # string
 
 
-
-
-
 class DumbControl:
     def __init__(self):
         rospy.init_node("sp_control")
-        rospy.loginfo("init")
+        rospy.loginfo("control: init")
 
         rospy.loginfo("init services...")
         rospy.wait_for_service(DRONE_INFO_SRV)
         self.active_drone_info_svp = rospy.ServiceProxy(DRONE_INFO_SRV,ActiveDroneInfo)
         rospy.wait_for_service(DRONE_LOCATION_SRV)
         self.drone_location_svp = rospy.ServiceProxy(DRONE_LOCATION_SRV, DronePosition)
-        rospy.loginfo("Required services are available")
+        rospy.loginfo("control: Required services are available")
 
 
         self.rate_hz = float(rospy.get_param(RATE_PM))
@@ -67,26 +64,33 @@ class DumbControl:
 
         self.missions = []
 
-        self.target_pub_pool = PublisherPool(Position, DRONE_ORDERS_SUFFIX)
+        # self.target_pub_pool = PublisherPool(Position, DRONE_ORDERS_SUFFIX)
         self.target_srv_pool = ServiceProxyPool(GoTo, "go_to")
 
         # When all is set up, advertise topic
         self.captain_orders_sub = rospy.Subscriber(CAPTAIN_ORDERS_SUB, CaptainOrders, self._captain_orders_cb, queue_size=5)
         self.captain_orders_msg = None
-        rospy.loginfo("init done")
+        rospy.loginfo("control: init done")
 
-    def _swarm_allocation_cb(self, msg):
-        self.swarm_allocation_msg = msg
+    # def _swarm_allocation_cb(self, msg):
+    #     self.swarm_allocation_msg = msg
+        
+
 
     def _get_active_info(self, active_id):
         adi_res = self.active_drone_info_svp(active_id=active_id)
         return adi_res
 
+    def update_mission_allocation(self, mission):
+        active_info = self._get_active_info(mission.active_id)
+        mission.connected_id = active_info.connected_id
+        mission.namespace = active_info.namespace
+
     def _captain_orders_cb(self, msg):
         # get connected drone ID corresponding to active drone id
         # assign for each connected drone list of waypoints
         self.captain_orders_msg = msg
-        rospy.logdebug("got new missions")
+        rospy.logdebug("control: got new missions")
 
         new_missions = []
         for drone_id in range(msg.num_drones):
@@ -97,17 +101,15 @@ class DumbControl:
             wp_z = [self.hover_altitude for wp_index in range(wp_start_index, wp_stop_index)]
             wp_tuples = list(zip(wp_x, wp_y, wp_z))
 
-            active_info = self._get_active_info(drone_id)
+            # active_info = self._get_active_info(drone_id)
 
             m = DroneMission.new()
             m.active_id = drone_id
-            m.connected_id = active_info.connected_id
             m.waypoints = wp_tuples
             # IMPORTANT: changing the below value to 1 means that the first target drones will try to reach is the first waypoint (and not the starting point of the trip)
-            m.current_wp = 0 # < len(wp_tuples)
-            m.namespace = active_info.namespace
+            m.current_wp = 1 # < len(wp_tuples)
             m.arrived = False
-
+            self.update_mission_allocation(m)
             new_missions.append(m)
 
         self.missions = new_missions

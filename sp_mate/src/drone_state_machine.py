@@ -36,7 +36,7 @@ class STATE(Enum):
 #     OK = "OK "
 #     FAULTY = "FLT"
 
-class UpdateType(object):
+class UpdateType(Enum):
     MODESTATE = 1
     NUM_ACTIVE = 2
 
