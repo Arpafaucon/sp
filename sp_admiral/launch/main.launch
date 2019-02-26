@@ -1,7 +1,8 @@
 <launch>
-  <node name="admiral" pkg="sp_admiral" type="admiral.py" ns="/sp" output="screen" required="True">
-    <param name="namespace" type="str" value="/sp/admiral"/>
-  </node>
+  <group ns="/sp">
+    <!-- <node name="admiral" pkg="sp_admiral" type="admiral.py" output="screen" required="True"/>
+    -->
 
-  <node name="admiral_viz" pkg="sp_admiral" type="markers.py" ns="/sp" output="screen"/>
+    <node name="admiral_viz" pkg="sp_admiral" type="markers.py" output="screen"/>
+  </group>
 </launch>

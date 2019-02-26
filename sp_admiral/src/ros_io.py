@@ -63,7 +63,7 @@ class AdmiralRosInterface(object):
         self.map_info = None
 
         self.can_run = False
-        self.run_service = rospy.Service("start_admiral", StartAdmiral, self.start_admiral)
+        self.run_service = rospy.Service("/sp/start_admiral", StartAdmiral, self.start_admiral)
 
         rospy.wait_for_service(SWARM_POSITION_SRV)
         self.svp_swarm_position = rospy.ServiceProxy(SWARM_POSITION_SRV, SwarmPositionSrv)
@@ -131,12 +131,7 @@ class AdmiralRosInterface(object):
         return (True, obs_map)
 
     def _load_raw_params(self):
-        try:
-            # check if namespace was defined as a private param
-            absolute_ns = rospy.get_param("~namespace")
-        except KeyError as _:
-            absolute_ns = DEFAULT_PARAM_NS
-        rno = absolute_ns + "/"
+        rno = DEFAULT_PARAM_NS + "/"
         # num_drones = rospy.get_param(rno+'num_drones')
         wall_radius = rospy.get_param(rno+'wall_radius')
         initial_temp = rospy.get_param(rno+'initial_temp')
@@ -267,7 +262,7 @@ class AdmiralRosInterface(object):
         self._publish_score(obs_map)
         # self._publish_status(num_drones, state_current,
                             #  state_target, convergence_steps, score, avg_score)
-        rospy.logdebug('Admiral messages published')
+        rospy.loginfo('Admiral messages published')
 
     def _publish_orders(self, state_current, state_target, num_drones, convergence_steps, score, avg_score ):
         # Message Setup

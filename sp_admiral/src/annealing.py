@@ -7,7 +7,7 @@ import random
 import math
 import copy
 
-import obs_map.support as obm
+import support as obm
 
 
 from constants import M, SMA_MAX_RETRY_STEP, PHY_WALL_THRES
@@ -61,6 +61,8 @@ class SimulAnnealingOptimisation(object):
             next_x, next_y = drone_x + delta[0], drone_y + delta[1]
             if allow_illegal or self._is_legal_drone(next_x, next_y):
                 neighbour_list.append((next_x, next_y))
+        if len(neighbour_list) == 0:
+            return [(drone_x, drone_y)]
         return neighbour_list
 
     def _neighbour_state(self, state):
