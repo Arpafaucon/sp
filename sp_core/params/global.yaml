@@ -3,7 +3,7 @@ mate:
   # set to false to use real robots
   # simulation_mode: true
   # number of drones max
-  num_drones_total: 4
+  num_drones_total: 2
   # target number of active drones
   num_drones_active: 2
   # Hardware addresses of real drones
@@ -30,6 +30,11 @@ mate:
   transition_duration: 5
   # tolerance radius around goals, m
   goal_radius : .1
+  # collision detection radius, m
+  # the collision distance is the distance between a drone wayline segment and another (higher priority) drone position 
+  # if that distance is less than the threshold set below, the drone mission is paused, and the lesser priority drone stays in place
+
+  collision_distance: .1
 
   # DRONE MANAGEMENT
   allocation_rate: 1
