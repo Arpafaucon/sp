@@ -17,6 +17,10 @@ from sp_core.msg import SwarmAllocation
 from sp_lookout.srv import DronePosition, DronePositionRequest, DronePositionResponse, SwarmPositionSrv, SwarmPositionSrvResponse
 from sp_lookout.msg import SwarmPosition
 
+# number of null messages to support before giving up
+# and throwing an error
+MAX_ZERO_MSG = 10
+
 SUB_SWARM_ALLOCATION = "/sp/swarm_allocation"
 
 class DroneLog(object):
@@ -103,13 +107,24 @@ class Lookout:
         with self.swarm_alloc_lock:
             namespace = self.swarm_alloc_msg.connected_drones_namespaces[d_connected_id]
             position_topic = "/{}/local_position".format(namespace)
-            try:
-                local_position_msg = rospy.wait_for_message(
-                    position_topic, GenericLogData, timeout=2) # type: GenericLogData
-            except rospy.ROSException as re:
-                rospy.logerr("getting local_position for {} took too long. Check this topic is actually published".format(namespace))
-                rospy.logerr(re.message)
-                sys.exit(1)
+            messages_seq = []
+            for _ in range(MAX_ZERO_MSG):
+                try:
+                    local_position_msg = rospy.wait_for_message(
+                        position_topic, GenericLogData, timeout=2) # type: GenericLogData
+                except rospy.ROSException as re:
+                    rospy.logerr("getting local_position for {} took too long. Check this topic is actually published".format(namespace))
+                    rospy.logerr(re.message)
+                    sys.exit(1)
+                is_null_msg = all(abs(coord) < 1e-6 for coord in local_position_msg.values)
+                messages_seq.append(local_position_msg.header.seq)
+                if not is_null_msg:
+                    break
+
+            if is_null_msg:
+                # happens if all loop iteration gave null messages
+                rospy.logerr("%d consecutive null msg for #%d position. Will proceed with a null msg. Got seq %s", MAX_ZERO_MSG, d_connected_id, messages_seq)
+
             coord_array = [0] * 6
             # copy x, y, z as is
             for i in range(0, 3):
