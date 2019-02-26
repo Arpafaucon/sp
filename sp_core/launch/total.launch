@@ -1,11 +1,7 @@
 <launch>
-    <include file="$(find sp_core)/launch/load_params.launch"/>
-    <include file="$(find sp_core)/launch/load_map.launch"/>
-
+    <include file="$(find sp_core)/launch/main.launch"/>
     <include file="$(find sp_admiral)/launch/main.launch"/>
     <include file="$(find sp_captain)/launch/main.launch"/>
     <include file="$(find sp_mate)/launch/main.launch"/>
     <include file="$(find sp_lookout)/launch/main.launch"/>
-
-    <!-- <node pkg="rqt_console" type="rqt_console" name="logging_monitor"/> -->
 </launch>

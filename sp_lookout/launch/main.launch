@@ -1,3 +1,3 @@
 <launch>
-    <node pkg="sp_lookout" type="lookout.py" name="lookout"/>
+    <node pkg="sp_lookout" type="lookout.py" name="lookout" ns="/sp"/>
 </launch>

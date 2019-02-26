@@ -17,6 +17,8 @@ from sp_core.msg import SwarmAllocation
 from sp_lookout.srv import DronePosition, DronePositionRequest, DronePositionResponse, SwarmPositionSrv, SwarmPositionSrvResponse
 from sp_lookout.msg import SwarmPosition
 
+SUB_SWARM_ALLOCATION = "/sp/swarm_allocation"
+
 class DroneLog(object):
     def __init__(self):
         self.position = None # type: List[float]
@@ -39,7 +41,7 @@ class Lookout:
     def __init__(self):
         rospy.init_node("sp_lookout")
         # Node rate
-        self.pm_rate = float(rospy.get_param('sp/lookout/rate'))
+        self.pm_rate = float(rospy.get_param('/sp/lookout/rate'))
         self.rate_ros = rospy.Rate(self.pm_rate)
         # Allocation subscriber
         self.swarm_alloc_sub = rospy.Subscriber(
@@ -146,11 +148,15 @@ class Lookout:
             pos = drone_log.position
             namespace = drone_log.namespace
             self._pub_pose_stamped(namespace, *pos)
+        rospy.loginfo_throttle(5, "published PoseStamped for drones")
 
     def _pub_pose_stamped(self, namespace, x, y, z, roll, pitch, yaw):
+        if namespace[0] != "/":
+            # make namespace absolute
+            namespace = "/" + namespace
         pub = self.pose_pubpool.get_pub(namespace)
         pos = PoseStamped()
-        pos.header.frame_id = "/map"
+        pos.header.frame_id = "/world"
         pos.header.stamp = rospy.Time.now()
 
         pos.pose.position.x = x

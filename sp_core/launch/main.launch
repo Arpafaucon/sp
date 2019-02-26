@@ -1,0 +1,6 @@
+<launch>
+    <include file="$(find sp_core)/launch/load_params.launch"/>
+    <include file="$(find sp_core)/launch/load_map.launch"/>
+    <node pkg="sp_core" type="tfbroadcast_map.py" name="tf_broadcast"/>
+    <!-- <node pkg="rqt_console" type="rqt_console" name="logging_monitor"/> -->
+</launch>

@@ -30,12 +30,18 @@ class TfMapBroadcaster(object):
         self.orientation_tf = (ori_o.x, ori_o.y, ori_o.z, ori_o.w)
         self.map_tf_set = True
 
+    # def pub_tf(self):
+    #     self.tf_broadcaster.sendTransform(self.position_tf,
+    #                                       self.orientation_tf,
+    #                                       rospy.Time.now(),
+    #                                       "/world",
+    #                                       "/map")
     def pub_tf(self):
-        self.tf_broadcaster.sendTransform(self.position_tf,
-                                          self.orientation_tf,
+        self.tf_broadcaster.sendTransform((0,0,0),
+                                          (0,0,0,1),
                                           rospy.Time.now(),
-                                          "map",
-                                          "world")
+                                          "/world",
+                                          "/map")
 
     def spin(self):
         while not rospy.is_shutdown():
