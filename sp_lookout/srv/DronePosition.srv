@@ -1,7 +1,7 @@
 # Drone location lservice
 # To fetch current location of one drone
 
-int8 active_id
+int8 id
 ---
 # position array [x, y, z, r, p, y] USI
 float64[] position

@@ -23,6 +23,9 @@ MAX_ZERO_MSG = 10
 
 SUB_SWARM_ALLOCATION = "/sp/swarm_allocation"
 
+SVP_POS_ACTIVE = "/sp/drone_position_active"
+SVP_POS_ALL = "/sp/drone_position_connected"
+
 class DroneLog(object):
     def __init__(self):
         self.position = None # type: List[float]
@@ -63,7 +66,8 @@ class Lookout:
         
         # drone position service
         self.drone_pos_srv = rospy.Service(
-            "/sp/drone_position", DronePosition, self._srv_drone_position)
+            SVP_POS_ACTIVE, DronePosition, self._srv_drone_position_active)
+        self.svros_position_connected = rospy.Service(SVP_POS_ALL, DronePosition, self.srv_position_connected)
         # swarm position service
         self.active_swarm_pos_srv = rospy.Service(
             "/sp/swarm_position", SwarmPositionSrv, self._srv_swarm_position)
@@ -71,15 +75,32 @@ class Lookout:
         # position publishers
         self.pose_pubpool = PublisherPool(PoseStamped, "pose_stamped")
 
-    def _srv_drone_position(self, req):
-        active_id = req.active_id
+    def _srv_drone_position_active(self, req):
+        active_id = req.id
+        with self.swarm_alloc_lock:
+            if self.swarm_alloc_msg is None:
+                return None
+            if not active_id < self.swarm_alloc_msg.num_drones_active:
+                rospy.logwarn("Requesting position for invalid active drone")
+                return None
+            connected_id = self.swarm_alloc_msg.active_drones_connected_ids[active_id]
         with self.swarm_log_lock:
             if self.swarm_log is None:
                 return None
-            drone_pos = self.swarm_log[active_id].position
-            res = DronePositionResponse()
-            res.position = drone_pos
-            return res
+            drone_pos = self.swarm_log[connected_id].position
+        res = DronePositionResponse()
+        res.position = drone_pos
+        return res
+
+    def srv_position_connected(self, req):
+        connected_id = req.id
+        with self.swarm_log_lock:
+            if self.swarm_log is None:
+                return None
+            drone_pos = self.swarm_log[connected_id].position
+        res = DronePositionResponse()
+        res.position = drone_pos
+        return res
 
     def _srv_swarm_position(self, req):
         active_only = req.active_only
