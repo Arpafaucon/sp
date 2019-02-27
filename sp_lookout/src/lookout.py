@@ -13,7 +13,7 @@ from sp_core.tools.rospools import PublisherPool
 from geometry_msgs.msg import PoseStamped
 from tf.transformations import quaternion_from_euler
 from crazyflie_driver.msg import GenericLogData
-from sp_core.msg import SwarmAllocation
+from sp_mate.msg import SwarmAllocation
 from sp_lookout.srv import DronePosition, DronePositionRequest, DronePositionResponse, SwarmPositionSrv, SwarmPositionSrvResponse
 from sp_lookout.msg import SwarmPosition
 

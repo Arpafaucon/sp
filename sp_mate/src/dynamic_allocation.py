@@ -6,7 +6,7 @@ from threading import RLock, Thread
 import time
 import rospy
 
-from sp_core.msg import SwarmAllocation
+from sp_mate.msg import SwarmAllocation
 from crazyflie_gazebo.tools import crazyflie
 from sp_mate.srv import Land, TakeOff, LandRequest, LandResponse, TakeOffRequest, TakeOffResponse, ActiveDroneInfo, ActiveDroneInfoResponse, DroneState, DroneStateRequest, DroneStateResponse, ActiveTarget, ActiveTargetResponse
 from sp_lookout.msg import SwarmPosition
