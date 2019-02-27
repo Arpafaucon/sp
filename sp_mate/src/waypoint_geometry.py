@@ -1,5 +1,24 @@
 import numpy as np
 
+def target_distance_cap(current_pos, current_target, distance_cap):
+    pos = np.zeros(3)
+    pos[:] = current_pos
+    target = np.zeros(3)
+    target[:] = current_target
+
+    raw_diff = target-pos
+    raw_distance = np.linalg.norm(raw_diff)
+
+    if raw_distance < distance_cap:
+        # fine !
+        return current_target
+    else:
+        net_diff = raw_diff * distance_cap / raw_distance
+        net_target = pos + net_diff
+        return tuple(net_target[:])
+
+# print target_distance_cap((0,0,0), (1,1,1), 1)
+
 def distance_to_collision(drone_pos, drone_target, collision_pos):
     assert len(drone_pos) == len(drone_target) == len(collision_pos) == 3
     point = np.zeros(3)

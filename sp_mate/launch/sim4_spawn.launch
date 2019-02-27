@@ -2,10 +2,6 @@
 
 <launch>
   <arg name="mav_name" default="crazyflie"/>
-  <arg name="world_name" default="basic"/>
-  <arg name="debug" default="false"/>
-  <arg name="gui" default="true"/>
-  <arg name="paused" default="true"/>
 
   <!-- Crazyflie arguments -->
   <arg name="enable_logging" default="true" />
@@ -58,10 +54,9 @@
 
   <!-- Some custom blocks for every crazyflie in the environment-->
   <rosparam>
-      genericLogTopics: ["local_position","target_position"]
-      genericLogTopicFrequencies: [10,10]
+      genericLogTopics: ["local_position"]
+      genericLogTopicFrequencies: [10]
       genericLogTopic_local_position_Variables: ["stateEstimate.x", "stateEstimate.y", "stateEstimate.z", "stabilizer.roll", "stabilizer.pitch", "stabilizer.yaw"]
-      genericLogTopic_target_position_Variables: ["posCtl.targetX", "posCtl.targetY", "posCtl.targetZ", "controller.roll", "controller.pitch", "controller.yaw"]
   </rosparam>
 
   <!-- The following line causes gzmsg and gzerr messages to be printed to the console

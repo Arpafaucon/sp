@@ -49,6 +49,18 @@ class DroneAllocation(object):
         self.state = None  # type: List[STATE]
         self.mode = None  # type: List[MODE]
 
+    @staticmethod
+    def same_allocation(da1, da2):
+        # type: (DroneAllocation, DroneAllocation) -> bool
+        """
+        Returns:
+            bool: True if allocations are the same
+        """
+        if da1 is None or da2 is None:
+            return False
+        same = da1.num_active == da2.num_active and da1.ad_connected_drones == da2.ad_connected_drones and da1.cd_active_drones == da2.cd_active_drones
+        return same
+
 
 class DroneStateMachine(object):
     @staticmethod

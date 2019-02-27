@@ -135,7 +135,11 @@ class DynamicAllocation(object):
             return None
 
         aid = req.active_id
+        if not aid < self.last_da.num_active:
+            rospy.logwarn("Active info requested for invalid active id #%d [num_active = %d]", aid, self.last_da.num_active)
+            return None
         res = ActiveDroneInfoResponse()
+
         cid = self.last_da.ad_connected_drones[aid]
         res.connected_id = cid
         res.status = self.last_da.state[cid].value + \
@@ -189,8 +193,11 @@ class DynamicAllocation(object):
             rospy.logdebug_throttle(2, "Allocation spinning")
             with self.last_da_lock:
                 allocation = self.ms_machine.spin()
+                has_changed = not DroneAllocation.same_allocation(allocation, self.last_da)
                 self.last_da = allocation
-            self.pub_allocation(allocation)
+            # if not has_changed:
+            #     rospy.loginfo("wouldn't publish an allocation now, as the allocation hasn't changed")
+            self.pub_allocation(allocation, has_changed)
             self.clean_daemons()
             self.rate_ros.sleep()
 
@@ -267,8 +274,8 @@ class DynamicAllocation(object):
         rospy.logwarn("cid# %d : state changed : %d to %d",
                       drone_index, old_state, new_state)
 
-    def pub_allocation(self, allocation):
-         # type: (DroneAllocation) -> None
+    def pub_allocation(self, allocation, has_changed):
+         # type: (DroneAllocation, bool) -> None
         sa_msg = SwarmAllocation()
 
         sa_msg.header.stamp = rospy.Time.now()
@@ -276,6 +283,7 @@ class DynamicAllocation(object):
 
         sa_msg.num_drones_connected = self.pm_num_connected_drones
         sa_msg.num_drones_active = allocation.num_active
+        sa_msg.changed_since_last = has_changed
 
         sa_msg.connected_drones_isreal = [False] * self.pm_num_connected_drones
         sa_msg.connected_drones_status = [
