@@ -60,12 +60,11 @@ def rosmain():
 
     while not done and not rospy.is_shutdown():
         # get current drone state
-        # that would be the point where we update the number of drones as well
-        # here : simplified : current state is last target state
         state_curr, num_drones = ros_if.get_drone_positions()
 
         if num_drones > 0:
             # there is something to optimize...
+            optim.set_num_drones(num_drones)
 
             # we update score map taking into account current state (score at t0)
             # if not first:
