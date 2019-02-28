@@ -59,9 +59,9 @@ class DroneMission:
         self.distance = None  # type: float
 
 
-class DumbControl:
+class SafeControl:
     def __init__(self):
-        rospy.init_node("sp_control", log_level=rospy.DEBUG)
+        rospy.init_node("sp_control", log_level=rospy.INFO)
         rospy.loginfo("control: init")
         self.missions = []
         self.mission_lock = RLock()
@@ -362,7 +362,7 @@ class DumbControl:
 
 
 def rosmain():
-    dc = DumbControl()
+    dc = SafeControl()
     dc.spin()
 
 

@@ -222,7 +222,7 @@ class DynamicAllocation(object):
         TAKEOFF -> ACTIVE once altitude is above (1 - threshold)*altitude
         """
         # for
-        rospy.loginfo_throttle(10, "Allocation got swarm position")
+        rospy.logdebug_throttle(10, "Allocation got swarm position")
         assert msg.mask == SwarmPosition.MASK_ALL, "wrong subscription"
         assert msg.num_drones == self.pm_num_connected_drones, "consistent connected drones number"
         with self.last_da_lock:

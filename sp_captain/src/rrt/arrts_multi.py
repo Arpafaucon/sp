@@ -114,7 +114,7 @@ class RRT():
                 if self.last_tick_time is not None:
                     duration = curr_time - self.last_tick_time
                 self.last_tick_time = curr_time
-                print("{} \t  {}".format(i, duration))
+                # print("{} \t  {}".format(i, duration))
 
                 if animation:
                     self.DrawGraph(rnd)
