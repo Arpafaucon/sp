@@ -12,7 +12,7 @@ admiral:
   # optimisation rate, in Hz
   rate: .07
   # score increment per cycle
-  score_step_increment: 4
+  score_step_increment: 15
 
 captain:
   # update check rate, in Hz
