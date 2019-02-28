@@ -76,7 +76,7 @@ class AdmiralRosInterface(object):
         return StartAdmiralResponse(self.can_run)
     
     def wait_for_go(self):
-        rospy.loginfo("Admiral in standby. call 'start_admiral' service to start")
+        rospy.logwarn("Admiral in stand-by. call 'start_admiral' service to start")
         while not self.can_run:
             time.sleep(1)
             if rospy.is_shutdown():
@@ -241,9 +241,9 @@ class AdmiralRosInterface(object):
                      obs_map, state_current, state_target, num_drones,
                      convergence_steps, score, avg_score):
         """
+        @Deprecated
         Publish all messages Admiral is responsible for:
         - score map
-        - status report
         - orders for the Captain
 
         Args:
@@ -258,13 +258,13 @@ class AdmiralRosInterface(object):
             score (float): score of the target configuration
             avg_score (float): reference average score for the past steps
         """
-        self._publish_orders(state_current, state_target, num_drones, convergence_steps, score, avg_score)
-        self._publish_score(obs_map)
+        self.publish_orders(state_current, state_target, num_drones, convergence_steps, score, avg_score)
+        self.publish_score(obs_map)
         # self._publish_status(num_drones, state_current,
                             #  state_target, convergence_steps, score, avg_score)
         rospy.loginfo('Admiral messages published')
 
-    def _publish_orders(self, state_current, state_target, num_drones, convergence_steps, score, avg_score ):
+    def publish_orders(self, state_current, state_target, num_drones, convergence_steps, score, avg_score ):
         # Message Setup
         orders = AdmiralOrders()
         orders.header.stamp = rospy.Time.now()
@@ -327,7 +327,7 @@ class AdmiralRosInterface(object):
         self.status_pub.publish(ad_stat)
 
 
-    def _publish_score(self, obs_map):
+    def publish_score(self, obs_map):
         SCALE = 255./100
         grid = OccupancyGrid()
         grid.header.stamp = rospy.Time.now()
@@ -347,14 +347,14 @@ class AdmiralRosInterface(object):
         x = swarm_position.x
         y = swarm_position.y
         num_drones = swarm_position.num_drones
-        rospy.loginfo( "got position on world [{}]: {}".format(num_drones, list(zip(x, y))))
+        rospy.logdebug( "got position on world [{}]: {}".format(num_drones, list(zip(x, y))))
         state = []
         for i_drone in range(num_drones):
             x_drone, y_drone = x[i_drone], y[i_drone]
             i_drone, j_drone = self._tf_world2grid(x_drone, y_drone)
-            rospy.loginfo("tf {} {} -> {} {}".format(x_drone, y_drone, i_drone, j_drone))
+            rospy.logdebug("tf {} {} -> {} {}".format(x_drone, y_drone, i_drone, j_drone))
             state.append( (i_drone, j_drone) )
-        rospy.loginfo( "got position on grid : {}".format(state))
+        rospy.loginfo( "got current state on grid : {}".format(state))
         return state, num_drones
 
     @staticmethod

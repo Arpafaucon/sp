@@ -182,6 +182,7 @@ def update_cell_score(cell_tuple, score_increment):
 def score_generation_step(observation_array, score_increment):
     h, w, _ = observation_array.shape
     total = 0
+    # print "Score increment is %d" % score_increment
     for i in range(h):
         for j in range(w):
             total += update_cell_score(observation_array[i, j], score_increment)

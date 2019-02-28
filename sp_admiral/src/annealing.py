@@ -131,8 +131,8 @@ class SimulAnnealingOptimisation(object):
             take_it = random.random() < proba
             if take_it:
                 return proposed_state, score
-        print('step stalled: no better state found after {} attempts'.format(
-            SMA_MAX_RETRY_STEP))
+        # print('step stalled: no better state found after {} attempts'.format(
+            # SMA_MAX_RETRY_STEP))
         return state, score
         #     else:
         #         # try again
