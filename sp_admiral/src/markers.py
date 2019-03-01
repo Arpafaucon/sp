@@ -10,6 +10,7 @@ from geometry_msgs.msg import Point
 ADM_ORDERS_SUB = '/sp/admiral_orders'
 ADM_VIZ_PUB = '/sp/admiral_viz'
 
+
 def extract_coords(orders, target=True):
     if target:
         return orders.target_xs, orders.target_ys
@@ -19,9 +20,10 @@ def extract_coords(orders, target=True):
 class AdmiralOrdersRviz(object):
     def __init__(self):
         rospy.init_node('admiral_rviz')
-        self.orders_viz_pub = rospy.Publisher(ADM_VIZ_PUB, Marker, queue_size=5)
-        self.orders_sub = rospy.Subscriber(ADM_ORDERS_SUB
-            , AdmiralOrders, self._orders_callback, queue_size=5)
+        self.orders_viz_pub = rospy.Publisher(
+            ADM_VIZ_PUB, Marker, queue_size=5)
+        self.orders_sub = rospy.Subscriber(
+            ADM_ORDERS_SUB, AdmiralOrders, self._orders_callback, queue_size=5)
         self.sight_radius = rospy.get_param('/sp/admiral/drone_sight_radius')
         self.seq = 0
 
@@ -65,6 +67,11 @@ class AdmiralOrdersRviz(object):
         rospy.loginfo("pub {} points".format(len(viz.points)))
         self.orders_viz_pub.publish(viz)
 
+    @staticmethod
+    def active_id_to_letter(aid):
+        assert 0 <= aid < 26
+        return chr(ord('A') + aid)
+
     def _pub_drone_ids(self, orders):
         color = ColorRGBA()
         color.a = color.r = color.g = color.b = 1
@@ -78,12 +85,12 @@ class AdmiralOrdersRviz(object):
         viz.ns = 'drone_ids'
         viz.type = viz.TEXT_VIEW_FACING
         viz.color = color
-        viz.scale.z = .1
+        viz.scale.z = .15
 
         x_coords, y_coords = extract_coords(orders, target=False)
         for i_drone in range(orders.num_drones):
             viz.id = i_drone
-            viz.text = str(i_drone)
+            viz.text = AdmiralOrdersRviz.active_id_to_letter(i_drone)
             viz.pose.position.x = x_coords[i_drone]
             viz.pose.position.y = y_coords[i_drone]
             # viz.pose.position.z = 0

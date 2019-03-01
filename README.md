@@ -4,4 +4,6 @@
 Melodic
 ```sh
 sudo apt install ros-melodic-xacro
+
+pip install typing
 ```
