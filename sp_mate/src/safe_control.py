@@ -332,7 +332,7 @@ class SafeControl:
         return ps
 
     def _send_order_position(self, mission, order_6d):
-        goto_srv_fun = self.target_srv_pool.get_pub(mission.namespace)
+        goto_srv_fun = self.target_srv_pool.get_svp(mission.namespace)
         rospy.loginfo("sending target to #{}  :{} [ns={}]".format(
             mission.active_id, order_6d, mission.namespace))
         tm = GoToRequest()
