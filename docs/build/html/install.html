@@ -1,0 +1,219 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Install &#8212; sp 1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="SP - Core package" href="core.html" />
+    <link rel="prev" title="SP_CF project" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="install">
+<h1>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="technical-requirements-and-supported-versions">
+<h2>Technical requirements and supported versions<a class="headerlink" href="#technical-requirements-and-supported-versions" title="Permalink to this headline">¶</a></h2>
+<p>The project has been developped and tested for both:</p>
+<ul class="simple">
+<li>Ubuntu 16.04 and ROS Kinetic [Lab PC: 40 CPUs, 64Go RAM, 1To SSD]</li>
+<li>Ubuntu 18.04 and ROS Melodic [Personal PC: 8 CPUs, 16Go RAM, 128To SSD]</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">ROS Kinetic being shipped with Gazebo 7, attaching lights to models is not supported in that setup. Gazebo 7 will gracefully ignore the light source. To allow consistency, an <code class="docutils literal notranslate"><span class="pre">enable_light</span></code> parameter is present to explicitely disable the light sources in Melodic.</p>
+</div>
+<p>The project isn’t particularly ressource heavy, most of the processing power was taken by the Gazebo physics engine.
+All operating rates for <code class="docutils literal notranslate"><span class="pre">sp</span></code> nodes are defined as parameters, and can be adjusted if needed.</p>
+</div>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>The following tools/packages are required</p>
+<ul class="simple">
+<li>a working ROS base installation (see <a class="reference external" href="http://wiki.ros.org/melodic/Installation/Ubuntu">http://wiki.ros.org/melodic/Installation/Ubuntu</a>)</li>
+<li>RVIZ</li>
+<li>git</li>
+</ul>
+<p>Additionnal python modules:</p>
+<ul class="simple">
+<li>typing (for static code checks)</li>
+<li>numpy</li>
+</ul>
+<p>Other ROS packages:</p>
+<ul class="simple">
+<li>wuwushrek/sim_cf</li>
+<li>whoenig/crazyflie_ros</li>
+</ul>
+</div>
+<div class="section" id="install-script">
+<h2>Install script<a class="headerlink" href="#install-script" title="Permalink to this headline">¶</a></h2>
+<p>The following install script was tested on a fresh Ubuntu install.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/bash</span>
+<span class="c1">##</span>
+<span class="c1"># SP setup procedure</span>
+<span class="c1">##</span>
+
+<span class="c1"># SYSTEM DEPS</span>
+<span class="n">sudo</span> <span class="n">apt</span> <span class="n">install</span> <span class="n">git</span> <span class="n">python</span><span class="o">-</span><span class="n">pip</span> <span class="n">python</span><span class="o">-</span><span class="n">tk</span>
+
+<span class="c1"># ROS INSTALLATION</span>
+<span class="c1"># on ubuntu 18</span>
+<span class="c1"># follow the repo installation procedure from ROS website</span>
+<span class="n">sudo</span> <span class="n">apt</span> <span class="n">install</span> <span class="n">ros</span><span class="o">-</span><span class="n">melodic</span><span class="o">-</span><span class="n">ros</span><span class="o">-</span><span class="n">base</span>
+<span class="n">sudo</span> <span class="n">apt</span> <span class="n">install</span> <span class="n">ros</span><span class="o">-</span><span class="n">melodic</span><span class="o">-</span><span class="n">rviz</span> <span class="n">ros</span><span class="o">-</span><span class="n">melodic</span><span class="o">-</span><span class="n">gazebo</span><span class="o">-</span><span class="n">ros</span> <span class="n">ros</span><span class="o">-</span><span class="n">melodic</span><span class="o">-</span><span class="n">xacro</span> <span class="n">ros</span><span class="o">-</span><span class="n">melodic</span><span class="o">-</span><span class="nb">map</span><span class="o">-</span><span class="n">server</span>
+<span class="c1"># equivalent to catkin_make, but cleaner (and faster)</span>
+<span class="n">sudo</span> <span class="n">apt</span> <span class="n">install</span> <span class="n">python</span><span class="o">-</span><span class="n">catkin</span><span class="o">-</span><span class="n">tools</span>
+<span class="c1"># additional deps for wuwushrek/sim_cf</span>
+<span class="n">sudo</span> <span class="n">apt</span> <span class="n">install</span> <span class="n">libopencv</span><span class="o">-</span><span class="n">dev</span> <span class="n">ros</span><span class="o">-</span><span class="n">melodic</span><span class="o">-</span><span class="n">cv</span><span class="o">-</span><span class="n">bridge</span>
+<span class="c1"># Don&#39;t forget to init rosdep if doing a fresh install</span>
+
+<span class="c1"># PYTHON DEPS</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">user</span> <span class="n">matplotlib</span> <span class="n">numpy</span> <span class="n">typing</span> <span class="n">tkinter</span>
+
+<span class="c1"># Workspace</span>
+<span class="n">source</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">ros</span><span class="o">/</span><span class="n">melodic</span><span class="o">/</span><span class="n">setup</span><span class="o">.</span><span class="n">bash</span>
+<span class="n">mkdir</span> <span class="o">-</span><span class="n">p</span> <span class="n">rosws</span><span class="o">/</span><span class="n">src</span>
+<span class="n">cd</span> <span class="n">rosws</span>
+<span class="n">catkin</span> <span class="n">init</span>
+<span class="n">cd</span> <span class="n">src</span>
+
+<span class="c1"># crazyflie_ros</span>
+<span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">whoenig</span><span class="o">/</span><span class="n">crazyflie_ros</span><span class="o">.</span><span class="n">git</span>
+<span class="n">cd</span> <span class="n">crazyflie_ros</span>
+<span class="n">git</span> <span class="n">submodule</span> <span class="n">update</span> <span class="o">--</span><span class="n">init</span> <span class="o">--</span><span class="n">recursive</span>
+<span class="n">cd</span> <span class="o">..</span>
+
+<span class="c1"># ===========</span>
+<span class="c1"># sim_cf</span>
+<span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">wuwushrek</span><span class="o">/</span><span class="n">sim_cf</span><span class="o">.</span><span class="n">git</span>
+<span class="c1">#f ollow installation instructions from README</span>
+<span class="c1"># currently:</span>
+<span class="c1"># </span>
+<span class="c1"># Basic dependencies</span>
+<span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">git</span> <span class="nb">zip</span> <span class="n">qtcreator</span> <span class="n">cmake</span> <span class="n">build</span><span class="o">-</span><span class="n">essential</span> <span class="n">genromfs</span> <span class="n">ninja</span><span class="o">-</span><span class="n">build</span> <span class="o">-</span><span class="n">y</span>
+<span class="c1"># Protobuf , eigen3 and google-glog dependencies</span>
+<span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">protobuf</span><span class="o">-</span><span class="n">compiler</span> <span class="n">libgoogle</span><span class="o">-</span><span class="n">glog</span><span class="o">-</span><span class="n">dev</span> <span class="n">libeigen3</span><span class="o">-</span><span class="n">dev</span> <span class="n">libxml2</span><span class="o">-</span><span class="n">utils</span>
+<span class="n">cd</span> <span class="n">sim_cf</span><span class="o">/</span>
+<span class="n">git</span> <span class="n">submodule</span> <span class="n">update</span> <span class="o">--</span><span class="n">init</span> <span class="o">--</span><span class="n">recursive</span>
+<span class="c1"># build sitl</span>
+<span class="n">cd</span> <span class="n">crazyflie</span><span class="o">-</span><span class="n">firmware</span><span class="o">/</span><span class="n">sitl</span><span class="o">-</span><span class="n">make</span>
+<span class="n">mkdir</span> <span class="n">build</span>
+<span class="n">cd</span> <span class="n">build</span>
+<span class="n">cmake</span> <span class="o">..</span>
+<span class="n">make</span>
+<span class="n">cd</span> <span class="o">../../../../</span> <span class="c1"># back to src/</span>
+
+<span class="c1"># sp</span>
+<span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">Arpafaucon</span><span class="o">/</span><span class="n">sp</span><span class="o">.</span><span class="n">git</span>
+
+<span class="n">catkin</span> <span class="n">build</span>
+<span class="c1"># re-source ROS setup after changes</span>
+<span class="n">source</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">ros</span><span class="o">/</span><span class="n">melodic</span><span class="o">/</span><span class="n">setup</span><span class="o">.</span><span class="n">bash</span>
+<span class="n">source</span> <span class="o">~/</span><span class="n">rosws</span><span class="o">/</span><span class="n">devel</span><span class="o">/</span><span class="n">setup</span><span class="o">.</span><span class="n">bash</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">sp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Install</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#technical-requirements-and-supported-versions">Technical requirements and supported versions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#install-script">Install script</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="core.html">SP - Core package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">SP_CF project</a></li>
+      <li>Next: <a href="core.html" title="next chapter">SP - Core package</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Gregoire Roussel.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/install.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
