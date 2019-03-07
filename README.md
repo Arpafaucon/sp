@@ -2,7 +2,7 @@
 ENSTA Super-project, 2018-2019
 License: LGPLv3
 
-![Simulation-only demonstration](docs/_ressources/front/Screenshot DEMO_SP_ROS.png)
+![Simulation-only demonstration](docs/_ressources/front/demo_sim.jpg)
 
 ## Overview
 
