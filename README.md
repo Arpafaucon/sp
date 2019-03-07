@@ -13,6 +13,8 @@ This repo contains the code for this project, that encompasses:
 - trajectory planning
 - control and drone avoidance
 - hot replacement of faulty drones
+- Support for Gazebo simulation through [`sim_cf` package](https://github.com/wuwushrek/sim_cf)
+- RVIZ display
 
 ## Full Documentation
 
