@@ -2,7 +2,7 @@
 
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 
-    <xacro:macro name="spotlight_macro" params="namespace parent_link
+    <xacro:macro name="spotlight_macro" params="namespace parent_link angle
      ">
         <joint name="${namespace}/spot_joint" type="fixed">
             <origin xyz="0 0 0" rpy="0 0 0" />
@@ -26,8 +26,8 @@
                 </attenuation>
                 <cast_shadows>false</cast_shadows>
                 <spot>
-                    <inner_angle>1.04</inner_angle>
-                    <outer_angle>1.05</outer_angle>
+                    <inner_angle>${angle}</inner_angle>
+                    <outer_angle>${angle*1.01}</outer_angle>
                     <falloff>0.1</falloff>
                 </spot>
             </light>

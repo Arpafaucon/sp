@@ -10,7 +10,8 @@
 
   <xacro:arg name='name' default='crazyflie' />
   <xacro:arg name='enable_wind' default='$(arg enable_wind)' />
-  <xacro:arg name='enable_light' default='true' />
+  <xacro:arg name='light_enable' default='true' />
+  <xacro:arg name='light_angle' default='${3.14/6}' />
 
   <!-- The following causes segfault with multiple vehicles if defaults to true!!! -->
   <xacro:arg name='enable_logging' default='false' />
@@ -34,7 +35,7 @@
   </xacro:if>
 
   <xacro:if value="$(arg enable_light)">
-    <xacro:spotlight_macro namespace="${namespace}" parent_link="base_link">
+    <xacro:spotlight_macro namespace="${namespace}" parent_link="base_link" angle="$(arg light_angle)">
     </xacro:spotlight_macro >
   </xacro:if>
 
