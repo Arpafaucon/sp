@@ -1,13 +1,18 @@
 <?xml version="1.0"?>
 
 <launch>
-  <arg name="mav_name" default="crazyflie"/>
-  <arg name="world_name" default="basic"/>
-  <arg name="debug" default="false"/>
-  <arg name="gui" default="false"/>
-  <arg name="paused" default="false"/>
 
-  <!-- Crazyflie arguments -->
+  <!-- Gazebo model argument -->
+  <arg name="mav_name" default="crazyflie"/>
+  <arg name="enable_light" default="false" />
+
+  <!-- Handler arguments -->
+  <arg name="nbQuads" default="4" />
+  <arg name="cfPrefix" default="cf" />
+  <arg name="uri" default="INADDR_ANY://19950"/>
+  <arg name="handlerName" default="handler1"/>
+
+  <!-- Common Crazyflie arguments -->
   <arg name="enable_logging" default="true" />
   <arg name="enable_parameters" default="true" />
   <arg name="use_ros_time" default="true" />
@@ -15,14 +20,8 @@
   <arg name="enable_logging_temperature" default="false" />
   <arg name="enable_logging_magnetic_field" default="false" />
   <arg name="enable_logging_pressure" default="false" />
-  <arg name="enable_logging_battery" default="false" />
+  <arg name="enable_logging_battery" default="true" />
   <arg name="enable_logging_packets" default="false" />
-
-  <arg name="enable_light" default="false" />
-  <arg name="nbQuads" default="4" />
-  <arg name="cfPrefix" default="cf" />
-  <arg name="uri" default="INADDR_ANY://19950"/>
-  <arg name="handlerName" default="handler1"/>
 
   <!-- Arguments for first Crazyflie -->
   <arg name="tf_prefix_1" default="$(arg cfPrefix)1" />
@@ -42,18 +41,10 @@
 
   <!-- Some custom blocks for every crazyflie in the environment-->
   <rosparam>
-      genericLogTopics: ["local_position","target_position"]
+      genericLogTopics: ["local_position"]
       genericLogTopicFrequencies: [10,10]
       genericLogTopic_local_position_Variables: ["stateEstimate.x", "stateEstimate.y", "stateEstimate.z", "stabilizer.roll", "stabilizer.pitch", "stabilizer.yaw"]
-      genericLogTopic_target_position_Variables: ["posCtl.targetX", "posCtl.targetY", "posCtl.targetZ", "controller.roll", "controller.pitch", "controller.yaw"]
   </rosparam>
-
-  <!-- The following line causes gzmsg and gzerr messages to be printed to the console
-      (even when Gazebo is started through roslaunch) -->
-  <arg name="verbose" default="true"/>
-
-  <!-- <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find crazyflie_gazebo)/models"/>
-  <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find crazyflie_gazebo)/models"/> -->
 
   <group ns="$(arg cfPrefix)1">
     <include file="$(find sp_crazyflie_gazebo)/launch/spawn_sp_crazyflie.launch">

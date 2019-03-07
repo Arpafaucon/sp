@@ -1,4 +1,5 @@
 #!/bin/bash
+# Script that constantly issues orders to drone cf1
 while true; do
 rosservice call /cf1/go_to "groupMask: 0
 relative: false

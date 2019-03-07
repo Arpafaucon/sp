@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+
+<launch>
+    <!-- Gazebo model argument -->
+    <arg name="mav_name" default="crazyflie"/>
+
+    <!-- Handler arguments -->
+    <arg name="cfPrefix" default="cf" />
+    <arg name="uri" default="INADDR_ANY://19950"/>
+    <arg name="handlerName" default="handler1"/>
+
+    <!-- Arguments for second Crazyflie -->
+    <arg name="tf_prefix_2" default="$(arg cfPrefix)2" />
+    <arg name="color_prop_front_2" default="Red" />
+    <arg name="color_prop_back_2" default="Red" />
+    <arg name="x_2" default="1.5" />
+    <arg name="y_2" default="1.0" />
+    <arg name="z_2" default="0.03" />
+
+
+    <group ns="$(arg cfPrefix)2">
+        <include file="$(find crazyflie_gazebo)/launch/spawn_mav.launch">
+            <arg name="tf_prefix" value="$(arg tf_prefix_2)"/>
+            <arg name="color_prop_front" default="$(arg color_prop_front_2)" />
+            <arg name="color_prop_back" default="$(arg color_prop_back_2)" />
+            <arg name="x" default="$(arg x_2)"/>
+            <arg name="y" default="$(arg y_2)"/>
+            <arg name="z" default="$(arg z_2)"/>
+        </include>
+    </group>
+
+    <group ns="handler1">
+        <include file="$(find crazyflie_gazebo)/launch/spawn_plugin.launch">
+            <!--<arg name="handlerName" value="$(arg handerName)" />-->
+            <arg name="plugin_name" value="handler1" />
+            <arg name="nbQuads" value="1" />
+            <arg name="cfPrefix" value="$(arg cfPrefix)" />
+            <arg name="uri" value="$(arg uri)" />
+            <arg name="firstIndex" value="2" />
+            <!-- First crazyflie index -->
+
+            <arg name="enable_logging" value="true"/>
+            <arg name="enable_parameters" value="true"/>
+            <arg name="use_ros_time" value="true"/>
+            <arg name="enable_logging_imu" value="False"/>
+            <arg name="enable_logging_temperature" value="false"/>
+            <arg name="enable_logging_magnetic_field" value="false"/>
+            <arg name="enable_logging_pressure" value="false"/>
+            <arg name="enable_logging_battery" value="false"/>
+            <arg name="enable_logging_packets" value="false"/>
+        </include>
+    </group>
+</launch>

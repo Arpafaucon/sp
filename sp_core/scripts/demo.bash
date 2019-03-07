@@ -18,8 +18,8 @@ echo
 
 
 wait4go "Request 3 active drones" "rosservice call /sp/active_target 3"
-wait4go "Register drone #1 as faulty" "rosservice call /sp/set_drone_state '{connected_id: 1, state: 2}'"
-wait4go "Register drone #1 as repaired" "rosservice call /sp/set_drone_state '{connected_id: 1, state: 1}'"
+wait4go "Register drone #2 as faulty" "rosservice call /sp/set_drone_state '{connected_id: 1, state: 2}'"
+wait4go "Register drone #2 as repaired" "rosservice call /sp/set_drone_state '{connected_id: 1, state: 1}'"
 wait4go "Start planification" "rosservice call /sp/start_admiral True"
 wait4go "Register drone #0 as faulty" "rosservice call /sp/set_drone_state '{connected_id: 0, state: 2}'"
 wait4go "Limit to 1 active drone" "rosservice call /sp/active_target 1"

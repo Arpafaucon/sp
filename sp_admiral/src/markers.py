@@ -16,6 +16,20 @@ def extract_coords(orders, target=True):
         return orders.target_xs, orders.target_ys
     return orders.current_xs, orders.current_ys
 
+COL_ALPHA = .5
+
+COL_CURRENT = ColorRGBA()
+COL_CURRENT.a = COL_ALPHA
+COL_CURRENT.r = 1
+
+COL_TARGET = ColorRGBA()
+COL_TARGET.a = COL_ALPHA
+COL_TARGET.g = 1
+
+CONE_ALTITUDE = 1
+CYL_HEIGHT = .05
+
+
 
 class AdmiralOrdersRviz(object):
     def __init__(self):
@@ -25,6 +39,7 @@ class AdmiralOrdersRviz(object):
         self.orders_sub = rospy.Subscriber(
             ADM_ORDERS_SUB, AdmiralOrders, self._orders_callback, queue_size=5)
         self.sight_radius = rospy.get_param('/sp/admiral/drone_sight_radius')
+        self.pm_altitude = rospy.get_param('/sp/mate/altitude', CONE_ALTITUDE)
         self.seq = 0
 
         self.scale = Vector3()
@@ -35,12 +50,11 @@ class AdmiralOrdersRviz(object):
 
     def _pub_order(self, orders, target=True):
         color = ColorRGBA()
-        color.a = 1
         if target:
-            color.r = 1
+            color = COL_TARGET
             marker_id = 0
         else:
-            color.g = 1
+            color = COL_CURRENT
             marker_id = 1
 
         viz = Marker()
@@ -85,7 +99,7 @@ class AdmiralOrdersRviz(object):
         viz.ns = 'drone_ids'
         viz.type = viz.TEXT_VIEW_FACING
         viz.color = color
-        viz.scale.z = .15
+        viz.scale.z = .2
 
         x_coords, y_coords = extract_coords(orders, target=False)
         for i_drone in range(orders.num_drones):
@@ -96,14 +110,99 @@ class AdmiralOrdersRviz(object):
             # viz.pose.position.z = 0
             self.orders_viz_pub.publish(viz)
 
-    def _pub_sight_areas(self, orders, target=True):
+    
+
+    def _pub_sight_areas_arrow(self, orders, target=True):
+        """
+        Publish sight areas as cones
+
+        FIXME: for an unknown reason, arrow do not care about alpha parameter
+        """
         color = ColorRGBA()
-        color.a = .5
         if target:
-            color.r = 1
+            ns = 'sight.target.cone'
+            color = COL_TARGET
+        else:
+            ns = 'sight.current.cyl'
+            color = COL_CURRENT
+
+        x_coords, y_coords = extract_coords(orders, target=target)
+        
+        viz = Marker()
+        viz.header.stamp = rospy.Time()
+        viz.header.frame_id = '/map'
+
+        viz.action = viz.MODIFY
+        viz.ns = ns
+        viz.type = viz.ARROW
+        viz.color = color
+        viz.scale.x = 0
+        viz.scale.y = 2*orders.sight_radius
+        viz.scale.z = self.pm_altitude
+
+
+        for i_drone in range(orders.num_drones):
+            viz.id = i_drone
+            viz.points = []
+            base = Point()
+            base.x = x_coords[i_drone]
+            base.y = y_coords[i_drone]
+            base.z = 0
+            viz.points.append(base)
+            tip = Point()
+            tip.x = x_coords[i_drone]
+            tip.y = y_coords[i_drone]
+            tip.z = self.pm_altitude
+            viz.points.append(tip)
+
+            self.orders_viz_pub.publish(viz)
+
+    def _pub_sight_areas_cylinder(self, orders, target=True):
+        """
+        Publish sight areas as cylinders
+        """
+        color = ColorRGBA()
+        if target:
+            ns = 'sight.target.cyl'
+            color = COL_TARGET
+        else:
+            ns = 'sight.current.cyl'
+            color = COL_CURRENT
+
+        x_coords, y_coords = extract_coords(orders, target=target)
+        
+        viz = Marker()
+        viz.header.stamp = rospy.Time()
+        viz.header.frame_id = '/map'
+
+        viz.action = viz.MODIFY
+        viz.ns = ns
+        viz.type = viz.CYLINDER
+        viz.color = color
+        viz.scale.x = 2*orders.sight_radius
+        viz.scale.y = 2*orders.sight_radius
+        viz.scale.z = CYL_HEIGHT
+
+
+        for i_drone in range(orders.num_drones):
+            viz.id = i_drone
+            viz.pose.position.x = x_coords[i_drone]
+            viz.pose.position.y = y_coords[i_drone]
+            viz.pose.position.z = CYL_HEIGHT/2.
+
+            self.orders_viz_pub.publish(viz)
+
+
+    def _pub_sight_areas(self, orders, target=True):
+        """
+        Publish sight areas as squares
+        """
+        color = ColorRGBA()
+        if target:
+            color = COL_TARGET
             marker_id = 0
         else:
-            color.g = 1
+            color = COL_CURRENT
             marker_id = 1
 
         viz = Marker()
@@ -140,8 +239,10 @@ class AdmiralOrdersRviz(object):
         #     self._pub_sight_areas(self.last_orders, target=False)
         self._pub_order(orders, target=True)
         self._pub_order(orders, target=False)
-        self._pub_sight_areas(orders, target=True)
-        self._pub_sight_areas(orders, target=False)
+        self._pub_sight_areas_arrow(orders, target=True)
+        self._pub_sight_areas_arrow(orders, target=False)
+        self._pub_sight_areas_cylinder(orders, target=True)
+        self._pub_sight_areas_cylinder(orders, target=False)
         self._pub_drone_ids(orders)
         self.seq += 1
         # self.last_orders = orders

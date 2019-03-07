@@ -1,7 +1,0 @@
-<launch>
-<!-- doesnt work -->
-    <include file="$(find sp_mate)/launch/servers.launch"/>
-    <include file="$(find sp_mate)/launch/sim4_spawn.launch"/>
-    <node pkg="crazyflie_gazebo" type="run_cfs.sh" args="4" name="run_cfs" output="screen"/>
-    <node pkg="gazebo_ros" type="gzclient" name="gzclient"/>
-</launch>

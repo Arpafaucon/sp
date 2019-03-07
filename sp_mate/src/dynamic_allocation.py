@@ -25,22 +25,18 @@ SRV_TAKEOFF = "/sp/takeoff"
 SRV_LAND = "/sp/land"
 
 
-
-
-
 class DynamicAllocation(object):
     """
     assumptions:
     - drone namespaces are 'cf<i>' , i starting from 1. So drone 0 has namespace 'cf1'
     """
     @staticmethod
-    def namespace(drone_id, absolute =False):
+    def namespace(drone_id, absolute=False):
         if absolute:
             prefix = "/"
         else:
             prefix = ""
         return "{}cf{}".format(prefix, drone_id+1)
-
 
     def __init__(self):
 
@@ -114,6 +110,9 @@ class DynamicAllocation(object):
         else:
             rospy.logerr("Unrecognized state change. Ignoring.")
             return None
+        if not 0 <= cid < self.pm_num_connected_drones:
+            rospy.logwarn("Invalid id in state change. Ignoring")
+            return None
         self.ms_machine.register_drone_update(cid, state=new_state)
         return DroneStateResponse()
 
@@ -122,6 +121,8 @@ class DynamicAllocation(object):
         target = req.active_target
         if target > self.pm_num_connected_drones:
             target = self.pm_num_connected_drones
+        if target < 0:
+            target = 0
         rospy.loginfo("New active target: %d [requested %d]",
                       target, req.active_target)
 
@@ -135,8 +136,9 @@ class DynamicAllocation(object):
             return None
 
         aid = req.active_id
-        if not aid < self.last_da.num_active:
-            rospy.logwarn("Active info requested for invalid active id #%d [num_active = %d]", aid, self.last_da.num_active)
+        if not 0 <= aid < self.last_da.num_active:
+            rospy.logwarn(
+                "Active info requested for invalid active id #%d [num_active = %d]", aid, self.last_da.num_active)
             return None
         res = ActiveDroneInfoResponse()
 
@@ -193,7 +195,8 @@ class DynamicAllocation(object):
             rospy.logdebug_throttle(2, "Allocation spinning")
             with self.last_da_lock:
                 allocation = self.ms_machine.spin()
-                has_changed = not DroneAllocation.same_allocation(allocation, self.last_da)
+                has_changed = not DroneAllocation.same_allocation(
+                    allocation, self.last_da)
                 self.last_da = allocation
             # if not has_changed:
             #     rospy.loginfo("wouldn't publish an allocation now, as the allocation hasn't changed")
@@ -205,7 +208,7 @@ class DynamicAllocation(object):
         # setup drones
         self.swarm = []
         rospy.loginfo("Allocation: init High-level")
-        
+
         for cid in range(self.pm_num_connected_drones):
             cd_namespace = DynamicAllocation.namespace(cid, absolute=True)
             # FIXME: second argument is weird

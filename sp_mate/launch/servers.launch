@@ -1,11 +1,13 @@
 <?xml version="1.0"?>
 <!-- starts gazebo server -->
 <launch>
-    <arg name="mav_name" default="crazyflie"/>
     <arg name="world_name" default="basic"/>
     <arg name="debug" default="false"/>
     <arg name="gui" default="false"/>
+    <!-- if true, gazebo starts paused -->
     <arg name="paused" default="false"/>
+      <!-- The following line causes gzmsg and gzerr messages to be printed to the console
+      (even when Gazebo is started through roslaunch) -->
     <arg name="verbose" default="true"/>
 
     <include file="$(find gazebo_ros)/launch/empty_world.launch">

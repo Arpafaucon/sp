@@ -132,7 +132,7 @@ def test_sp(h, w):
     return list(spiraling_coordinates_generator((h, w)))
 
 
-def get_visible_cells(center_coord, sight_radius, array_dim):
+def get_visible_cells(center_coord, sight_radius, array_dim, true_circle=True):
     """
     Return as a list the set of cells visible from an observator
     
@@ -147,7 +147,18 @@ def get_visible_cells(center_coord, sight_radius, array_dim):
     visible_cells = []
     for ring in range(sight_radius+1):
         visible_cells += get_ring_coordinates(center_coord, ring, array_dim)
-    return visible_cells
+    if not true_circle:
+        return visible_cells
+
+    # filter cells that are too far in 2D euclidean distance
+    distsq_max = sight_radius**2
+    def dist_center_sq(cell):
+        i, j = cell
+        dist2 = (i - center_coord[0])**2 + (j-center_coord[1])**2
+        return dist2
+    
+    circle_visible_cells = [cell for cell in visible_cells if dist_center_sq(cell) < distsq_max]
+    return circle_visible_cells
 
 
 def inflate_cell(obs_array, wall_cell_coord, radius):

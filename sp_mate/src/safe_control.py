@@ -35,9 +35,6 @@ PUB_RAW_ORDERS_SUFFIX = "sp_cmd_raw"
 PUB_POS_SUFFIX = "sp_pos"
 
 
-# param sp_mate/rate
-
-
 class DroneMission:
     next_free_id = 0
 
@@ -55,7 +52,7 @@ class DroneMission:
         self.waypoints = None  # type: List[Tuple[float, float, float]]
         self.current_wp = None  # type: int # index in `waypoints`
         self.arrived = None  # type: bool
-        self.namespace = None  # type: string
+        self.namespace = None  # type: string # ex '/cf1'
         self.distance = None  # type: float
 
 
@@ -129,7 +126,7 @@ class SafeControl:
         
         cid = self.last_allocation_msg.active_drones_connected_ids[aid]
         mission.connected_id = cid
-        mission.namespace = self.last_allocation_msg.connected_drones_namespaces[cid]
+        mission.namespace = "/" + self.last_allocation_msg.connected_drones_namespaces[cid]
         return True
 
     def cb_captain_orders(self, msg):

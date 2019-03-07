@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+
+<launch>
+  <!-- <arg name="uri" default="radio://0/80/1M/E7E7E7E708" /> -->
+  <arg name="uri" />
+  <arg name="tf_prefix" default="cf1" />
+
+  <!-- Parameters -->
+  <arg name="roll_trim" default="0" />
+  <arg name="pitch_trim" default="0" />
+  <arg name="enable_logging" default="True" />
+  <arg name="use_ros_time" default="True" />
+  <arg name="enable_logging_imu" default="False" />
+  <arg name="enable_logging_temperature" default="False" />
+  <arg name="enable_logging_magnetic_field" default="False" />
+  <arg name="enable_logging_pressure" default="False" />
+  <arg name="enable_logging_battery" default="True" />
+  <arg name="enable_logging_packets" default="True" />
+
+  <group ns="$(arg tf_prefix)">
+    <node pkg="crazyflie_driver" type="crazyflie_add" name="crazyflie_add" output="screen">
+      <param name="uri" value="$(arg uri)" />
+      <param name="tf_prefix" value="$(arg tf_prefix)" />
+      <param name="roll_trim" value="$(arg roll_trim)" />
+      <param name="pitch_trim" value="$(arg pitch_trim)" />
+      <param name="enable_logging" value="$(arg enable_logging)" />
+      <param name="use_ros_time" value="$(arg use_ros_time)" />
+      <param name="enable_logging_imu" value="$(arg enable_logging_imu)" />
+      <param name="enable_logging_temperature" value="$(arg enable_logging_temperature)" />
+      <param name="enable_logging_magnetic_field" value="$(arg enable_logging_magnetic_field)" />
+      <param name="enable_logging_pressure" value="$(arg enable_logging_pressure)" />
+      <param name="enable_logging_battery" value="$(arg enable_logging_battery)" />
+      <param name="enable_logging_packets" value="$(arg enable_logging_packets)"/>
+
+      <!-- Custom log usually used in simulation -->
+      <rosparam>
+        genericLogTopics: ["local_position"]
+        genericLogTopicFrequencies: [10]
+        genericLogTopic_local_position_Variables: ["stateEstimate.x", "stateEstimate.y", "stateEstimate.z", "stabilizer.roll", "stabilizer.pitch", "stabilizer.yaw"]
+      </rosparam>
+    </node>
+
+
+    <include file="$(find crazyflie_gazebo)/launch/spawn_ghost.launch">
+      <arg name="allow_collision"  value="False"/>
+      <arg name="modelName" value="realcf1"/>
+      <arg name="poseTopic" value="/$(arg tf_prefix)/local_position"/>
+      <arg name="color_prop_front" value="Blue"/>
+      <arg name="color_prop_back" value="Red"/>
+
+    </include>
+  </group>
+
+</launch>
+<!-- roslaunch crazyflie_gazebo spawn_ghost.launch allow_collision:=true modelName:=realcf1 poseTopic:=/cf1/local_position color_prop_front:=Blue color_prop_back:=Red -->
