@@ -1,11 +1,11 @@
-all: config web pdf
+all: html
 
-config:
+html:
 	doxygen conf/Doxyfile
 
-web: config
+html_pdf: html
 	wkhtmltopdf build/html/report.html ROB314_Roussel_Gregoire.pdf
 
-pdf: config 
+latex_pdf: html 
 	cd build/latex && make
 	cp build/latex/refman.pdf ROB314_Roussel_Gregoire_tx.pdf

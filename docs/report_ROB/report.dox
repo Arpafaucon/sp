@@ -99,6 +99,7 @@ J'ai travaillé à la migration de ce package sous ROS Melodic (il y a une mise 
 \subsubsection agencement Architecture
 
 Le diagramme ci-dessous illustre les relations et échanges entre les différents outils externes impliqués et le module `sp` du projet:
+
 - en **bleu** : lors d'une simulation
 - en **rouge** : lors d'une expérience réelle
 
@@ -109,6 +110,7 @@ Le diagramme ci-dessous illustre les relations et échanges entre les différent
 
 \subsubsection boat La métaphore du bateau
 Une courte (et imparfaite) analogie avec le fonctionnement d'un bateau (ancien) permet d'introduire les *nodes* impliqués dans le fonctionnement de \p sp.
+
 - l'**amiral** donne l'objectif à atteindre: il donne la stratégie générale sous la forme de zones à atteindre, peu importe par quel navire
 - le **capitaine** est chargé de réaliser cet ordre : il assigne à chaque vaisseau/drone une position à atteindre, et un itinéraire pour y parvenir
 - le **second**  (mate) contrôle l'exécution des ordres donnés, et évite les éventuelles collisions entre navires.
@@ -158,6 +160,7 @@ Pour ceci,
 
 \imageSize{rviz_admiral1.gif,width:15cm;,"Ordres de l'Amiral (RVIZ)"}
 Sur l'image ci-dessus, on peut observer:
+
 - la carte de la zone (les obstacles sont représentés par des cellules noires)
 - la carte des scores:
     - bleu : score faible, zone récemment visitée
@@ -170,6 +173,7 @@ Sur l'image ci-dessus, on peut observer:
 \subsection sp_captain Capitaine
 
 Le capitaine élabore et complète les ordres donnés par l'amiral. À partir de la liste des positions, il calcule:
+
 - l'assignation optimale de chaque drone actif vers un des objectifs
 - une trajectoire pour y parvenir
 
@@ -179,6 +183,7 @@ L'algorithme utilisé est un RRT* multi-agent, avec la variante que l'associatio
 
 \imageSize{rviz_captain2.gif,width:15cm;,"Ordres du Capitaine (RVIZ)"}
 Sur l'image ci-dessus, on observe:
+
 - ronds verts: objectifs à observer pour cette période (donnés par l'Amiral)
 - points rouges et [A, B, C, D]: positions actuelles des drones actifs
 - ligne jaune: trajectoires calculées entre les positions actuelles et l'objectif assigné (Capitaine)
@@ -188,6 +193,7 @@ Sur l'image ci-dessus, on observe:
 \subsubsection allocation Allocation des drones
 
 L'allocation est le processus de sélection des drones actifs. Étant donné un objectif de N drones actifs, le second fait décoller ou atterir le nombre adapté de drones. Il surveille leur état pendant ces manoeuvres, et informe le reste du système :
+
 - du nombre de drones actuellement actifs (utilisé par l'amiral puis le second pour la planification)
 - de la correspondance identifiant actif-connecté (utilisé par le contrôle et la vigie)
 - de l'état et mode de chacun des drones connectés (utilisé pour la détection des défaillances)
@@ -205,6 +211,7 @@ Une première méthode naïve, consistant à arrêter deux drones s'ils s'approc
 \imageSize{control.png,width:10cm;,"Scénario d'évitement"}
 
 __Explication du scénario__ : On suppose ici que les drones (en rouge) 1, 2, 3 sont chargés de missions de priorités décroissantes. Les flèches indiquent la trajectoire à suivre jusqu'au prochain waypoint (en vert). Les rectangles arrondis matérialisent la zone de sécurité autour de chaque trajectoire.
+
 - 1 suit sa trajectoire
 - 2, en revanche, menace de croiser 1. Il s'arrête à sa position, et reprendra sa course lorsque le chemin jusqu'au prochain waypoint est libre. 
 - 3 ne gêne aucun autre drone, et peut suivre sa trajectoire.
@@ -225,6 +232,7 @@ Pour améliorer l'expérience de visualisation sur Gazebo, j'ai modifié le mod�
 
 La vidéo de démonstration présentée en cours est accessible à https://youtu.be/HivgX3iqf3A.
 Elle illustre le comportement du système en deux phases:
+
 1. __Phase statique__: la planification n'est pas active, et on demande trois drones actifs.
     On peut constater que lorsqu'un drone est déclaré défaillant, il atterit, et un autre décolle pour le remplacer
 2. __Phase dynamique__: Les nodes \p sp_admiral, \p sp_captain sont activées, les drones se déplacent. 
@@ -239,6 +247,7 @@ On peut identifier les aspects réussis, et à perfectionner:
 Au terme du projet, le système a atteint un fonctionnement cohérent, et robuste aux fautes de drones en simulation. L'élaboration et le suivi des ordres sont fonctionnels, et la méthode d'évitement des collisions donne des résultats satisfaisants en terme de sécurité et d'efficacité (pas de blocages inutiles). 
 
 Sur le plan pédagogique, ce projet m'a permis d'explorer plusieurs aspects de ROS:
+
 - l'architecture d'un système et la communication entre ses composants internes
 - l'interfaçage et la communication avec des projets indépendants
 - la simulation avec Gazebo : écriture d'un plugin et d'un modèle URDF
