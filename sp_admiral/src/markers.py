@@ -3,7 +3,7 @@
 import rospy
 from std_msgs.msg import ColorRGBA
 from geometry_msgs.msg import Vector3
-from sp_core.msg import AdmiralOrders
+from sp_admiral.msg import AdmiralOrders
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
 

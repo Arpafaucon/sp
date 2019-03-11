@@ -6,7 +6,7 @@ from threading import RLock
 import rospy
 from crazyflie_driver.msg import GenericLogData, Position
 from crazyflie_driver.srv import GoTo, GoToRequest
-from sp_core.msg import CaptainOrders
+from sp_captain.msg import CaptainOrders
 from sp_mate.srv import ActiveDroneInfo
 from sp_lookout.srv import DronePosition
 from sp_mate.msg import SwarmAllocation

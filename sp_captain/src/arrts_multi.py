@@ -17,41 +17,41 @@ import numpy as np
 import matplotlib.pyplot as plt
 import itertools
 import time
-# dev
-from PIL import Image
+# # dev
+# from PIL import Image
 
 # above this value (0-100) the cell is considered full, therefore not travelable to
 WALL_THRESHOLD = 50
 TREE_COLORS = ['green', 'blue', 'gold', 'crimson', 'lime', 'purple', 'darkorange', 'saddlebrown', 'indigo', 'coral']
 NUM_TREE_COLORS = len(TREE_COLORS)
-show_animation =  not True
+show_animation =  False # default param for matplotlib animation display
 
 
 class RRTPath:
+    """
+    A path result for the multi-agent planning
+    """
     def __init__(self, i_start, i_end, cost, path, valid=True):
-        self.i_start = i_start
-        self.i_end = i_end
-        self.cost = cost
-        self.path = path
-        self.valid = valid
+        self.i_start = i_start # index of start point (=index of tree)
+        self.i_end = i_end # index of end point
+        self.cost = cost # cost of path
+        self.path = path # list of waypoint nodes
+        self.valid = valid # True if path is valid - if False above args may not be set
 
         
-
-
 class RRT():
     """
-    Class for RRT Planning
+    Class for multi-agent RRT planning
     """
 
     def __init__(self, num_trees, starts, goals, occupancyGrid,
                  expandDis=0.5, goalSampleRate=20, maxIter=500):
         """
         Setting Parameter
-
-        start:Start Position [x,y]*num_trees
-        goal:Goal Position [x,y]*num_trees
-        obstacleList:obstacle Positions [[x,y,size],...]
-        randArea:Ramdom Samping Area [min,max]
+        Args:
+            start: Start Position [x,y]*num_trees
+            goal: Goal Position [x,y]*num_trees
+            obstacleList: obstacle Positions [[x,y,size],...]
 
         """
         self.starts = []
@@ -62,10 +62,7 @@ class RRT():
             self.starts.append(Node(start[0], start[1]))
             goal = goals[i]
             self.ends.append(Node(goal[0], goal[1]))
-        # self.start = Node(start[0], start[1])
-        # self.end = Node(goal[0], goal[1])
         self.expandDis = expandDis
-        # self.goalSampleRate = goalSampleRate
         self.maxIter = maxIter
         self.occupancy_grid = occupancyGrid
 
@@ -73,10 +70,7 @@ class RRT():
         self.maxrand_x = width
         self.maxrand_y = height
         self.minrand_x = 0
-        # self.maxrand_x = randArea[0]
         self.minrand_y = 0
-        # self.maxrand_y = randArea[1]
-        # self.resolution = resolution
 
         self.sample_rate_goal = goalSampleRate / 100.
 
@@ -136,12 +130,6 @@ class RRT():
         assign_success, final_assign, min_cost, perm = self._assign_paths(rrt_paths_mat)
         return assign_success, final_assign, min_cost, perm
         
-        # # generate coruse
-        # lastIndex = self.get_best_last_index()
-        # if lastIndex is None:
-        #     return None
-        # path = self.gen_final_course(lastIndex)
-        # return path
 
     def choose_parent(self, newNode, i_tree, nearinds):
         if len(nearinds) == 0:
@@ -172,7 +160,6 @@ class RRT():
         return newNode
 
     def steer(self, i_tree, rnd, nind):
-
         # expand tree
         nodeList = self.nodeList_all[i_tree]
         nearestNode = nodeList[nind]
@@ -207,7 +194,6 @@ class RRT():
         disglist = [self.calc_dist_to_goal(
             node.x, node.y, i_goal) for node in nodeList]
         goalinds = [disglist.index(i) for i in disglist if i <= self.expandDis]
-        #  print(goalinds)
 
         if len(goalinds) == 0:
             return None
@@ -220,6 +206,9 @@ class RRT():
         return None
 
     def gen_final_course(self, goalind, i_tree, i_goal):
+        """
+        Return list of waypoints and distance from start to goal
+        """
         nodeList = self.nodeList_all[i_tree]
         last_node = nodeList[goalind]
         last_step_cost = self.calc_dist_to_goal(last_node.x, last_node.y, i_goal)
@@ -249,6 +238,9 @@ class RRT():
         return nearinds
 
     def rewire(self, newNode, nearinds, i_tree):
+        """
+        Find childs for 'newNode' among list of potential child 'nearinds' in given tree
+        """
         nodeList = self.nodeList_all[i_tree]
         nnode = len(nodeList)
         for i in nearinds:
@@ -267,7 +259,9 @@ class RRT():
                     nearNode.cost = scost
 
     def check_collision_extend(self, nearNode, theta, d):
-
+        """
+        Check collision on the way from 'nearNode' in the given direction
+        """
         # we only care about x and y
         # tmpNode = copy.copy(nearNode)
         node_x = nearNode.x
@@ -285,7 +279,7 @@ class RRT():
 
     def DrawGraph(self, rnd=None):
         """
-        Draw Graph
+        Draw matplotlib graph of the current trees
         """
         plt.clf()
         if rnd is not None:
@@ -318,36 +312,29 @@ class RRT():
         return minind
 
     def __CollisionCheck(self, node_x, node_y):
+        """
+        Return true if node is in free cell
+        """
         # inlining to improve perfs
         cell_i = int(node_y)
         cell_j = int(node_x)
-        # cell_i, cell_j = self._get_map_indices(node_x, node_y)
-
         cost = self.occupancy_grid[cell_i, cell_j]
-        # if cost > WALL_THRESHOLD:
-        #     return False
-        # return True
         return cost < WALL_THRESHOLD
-        # for (ox, oy, size) in obstacleList:
-        #     dx = ox - node.x
-        #     dy = oy - node.y
-        #     d = dx * dx + dy * dy
-        #     if d <= size ** 2:
-        #         return False  # collision
-        # return True  # safe
 
     def _get_map_indices(self, x_target, y_target):
         xc_target = int(x_target)
         yc_target = int(y_target)
         return (yc_target, xc_target)
 
-    def _assign_paths(self, rrt_paths_mat):
+    def _assign_paths(self, rrt_paths_mat, score_cost=max):
         """
-        Given the distance matrix, compute the best goal assignment
+        Given the distance matrix, compute the best goal assignment for given method. 
+        Will return the assignment that gives the smallest score (according to score_cost)
 
         
         Args:
             rrt_paths_mat (list[list[RRTPath]]): [description]
+            method (List[float]->float): evaluation function of the cost vector. Can be 'max' or 'sum'.
         
         Returns:
             (bool, list[RRTPath], float, list[int]): success, chosen_paths, total_cost, final_permutation
@@ -360,31 +347,30 @@ class RRT():
         for i_start in range(self.num_trees):
             for i_end in range(self.num_trees):
                 path = rrt_paths_mat[i_start][i_end]
-        # for path in rrt_paths:
                 if path.valid:  
                     start = path.i_start
                     end = path.i_end
                     cost = path.cost
                     cost_matrix[start][end] = cost
-        print(cost_matrix)
-        min_cost = np.inf
+
+        min_score = np.inf
         min_perm = None
         for perm in itertools.permutations(range(self.num_trees)):
             cost_vector = [cost_matrix[i][perm[i]] for i in range(self.num_trees)]
-            cost = sum(cost_vector)
-            if cost < min_cost:
+            score = score_cost(cost_vector)
+            if score < min_score:
                 # new min
-                min_cost = cost
+                min_score = score
                 min_perm = perm
         
-        if min_cost == np.inf :
+        if min_score == np.inf :
             return False, None, None, None
         final_assign = []
         for i_start in range(self.num_trees):
             assigned_goal = min_perm[i_start]
             final_assign.append(rrt_paths_mat[i_start][assigned_goal])
         
-        return (True, final_assign, min_cost, min_perm)
+        return (True, final_assign, min_score, min_perm)
 
 
 

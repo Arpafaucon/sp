@@ -8,7 +8,7 @@ import numpy as np
 import time
 
 from nav_msgs.msg import OccupancyGrid
-from sp_core.msg import AdmiralStatus, AdmiralOrders
+from sp_admiral.msg import AdmiralOrders
 from tf.transformations import euler_from_quaternion
 
 from sp_admiral.srv import StartAdmiral, StartAdmiralRequest, StartAdmiralResponse
