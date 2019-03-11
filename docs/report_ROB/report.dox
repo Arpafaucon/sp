@@ -187,7 +187,7 @@ Une première méthode naïve, consistant à arrêter deux drones s'ils s'approc
 
 \imageSize{control.png,width:10cm;,"Scénario d'évitement"}
 
-__Explication du scénario__ : On suppose ici que les drones 1, 2, 3 sont chargés de missions de priorités décroissantes.
+__Explication du scénario__ : On suppose ici que les drones (en rouge) 1, 2, 3 sont chargés de missions de priorités décroissantes. Les flèches indiquent la trajectoire à suivre jusqu'au prochain waypoint (en vert)
 - 1 suit sa trajectoire
 - 2, en revanche, menace de croiser 1. Il s'arrête à sa position, et reprendra sa course lorsque le chemin jusqu'au prochain waypoint est libre. 
 - 3 ne gêne aucun autre drone, et peut suivre sa trajectoire.
