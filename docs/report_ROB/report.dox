@@ -13,6 +13,8 @@ Grégoire Roussel
 
 11 mars 2019
 
+\tableofcontents
+
 \section Introduction
 
 \subsection objectif Objectif
@@ -24,11 +26,13 @@ L'objectif du projet est de construire et valider expérimentalement un système
 - garantir la robustesse du système en remplaçant à chaud les drones défaillants
 - fournir un compte rendu visuel de la situation actuelle
 
+
 L'accent a été mis, non pas sur le développement d'un bloc scientifiquement innovant, mais sur la conception d'un système fonctionnel dans son ensemble, et qui me permette d'approfondir des problèmes récurrents d'un projet informatique complexe:
 - paramétrage
 - interfaces et communications multi-processus 
 - utilisation de code extérieur
 - réutilisation de code mis en commun
+
 
 Et des thématiques fréquentes de la programmation robotique :
 - localisation
@@ -37,26 +41,38 @@ Et des thématiques fréquentes de la programmation robotique :
 - coordination de plusieurs agents
 - visualisations pour permettre la compréhension du système
 
+
+La présentation dans le cadre de ROB314 se concentre sur la partie architecture et simulation.
+
 \subsection techno Matériel et technologies
 
-Dans l'expérience, les drones de surveillances sont des Crazyflie (bitcraze, https://www.bitcraze.io/crazyflie-2/). Ce sont des petits quadri-coptères très légers (environ 40g) contrôlables via radio par un ordinateur central.
-
-Cette base centrale exécute le méta-OS ROS: http://www.ros.org/ . Ce méta-OS, couramment utilisée lors du prototypage de robots facilite l'interaction entre processus et la conception de blocs fonctionnels modulaires et réutilisables. Elle fournit par ailleurs des outils de développement, de diagnostics et de visualisation qui simplifient la conception d'un système robotique. Dans ce projet, les outils **RVIZ** (outil de visualisation générique) et **Gazebo** (moteur de simulation) sont beaucoup utilisés.
-
-
-\imageSize{crazyflie20.jpg,width:10cm;,"drone Crazyflie 2.0"}
-
-\section structureGenerale Structure Générale
-
-\subsection outilsExt Outils externes
 
 \subsubsection crazyflie Crazyflie
 
+Dans l'expérience, les drones de surveillances sont des Crazyflie (bitcraze, https://www.bitcraze.io/crazyflie-2/). Ce sont des petits quadri-coptères très légers (environ 40g) contrôlables via radio par un ordinateur central.
+
 Outre leur disponibilité au laboratoire, le choix des Crazyflie se justifie par leur faible coût et leur grande robustesse aux chocs. Par ailleurs, la communauté ROS met à disposition des drivers et un programme de simulation aux **interfaces similaires**. Ainsi, le projet peut indépendamment contrôler des drones simulés ou réels, ou même une combinaison des deux.
 
-La salle d'expérimentation cyber-physique du LIX contient une dizaine de drone Crazyflie, et un dispositif de localisation externe: le Loco Positioning System. Chaque Crazyflie se positionne dans l'espace en comparant les délais de transmissions avec de multiples balises radio, en quelque sorte comme un GPS d'intérieur. La précision de ce système est de l'ordre de la dizaine de centimètres, avec une incertitude principalement sur l'altitude.
+\imageSize{crazyflie20.jpg,width:10cm;,"drone Crazyflie 2.0"}
+\imageSize{drone_closeup_2.jpg,width:10cm;,"Modèle Gazebo de simulation"}
 
+La salle d'expérimentation cyber-physique du LIX contient une dizaine de drone Crazyflie, et un dispositif de localisation externe: le Loco Positioning System (LPS). Chaque Crazyflie se positionne dans l'espace en comparant les délais de transmissions avec de multiples balises radio, en quelque sorte comme un GPS d'intérieur. La précision de ce système est de l'ordre de la dizaine de centimètres, avec une incertitude principalement sur l'altitude.
 \image html tdoa.png "Exemple de résolution de la position en 2D avec 3 balises"
+
+
+\subsubsection pc Base centrale
+
+Cette base centrale exécute le méta-OS ROS: http://www.ros.org/ . Ce méta-OS, couramment utilisée lors du prototypage de robots facilite l'interaction entre processus et la conception de blocs fonctionnels modulaires et réutilisables. Elle fournit par ailleurs des outils de développement, de diagnostics et de visualisation qui simplifient la conception d'un système robotique. Dans ce projet, les outils **RVIZ** (outil de visualisation générique) et **Gazebo** (moteur de simulation) sont beaucoup utilisés.
+
+Les deux configurations suivantes ont été testées:
+
+- **PC personel**: Ubuntu 18.04, ROS Melodic, 16Go RAM, 8CPU, 1To HDD
+- **PC de la salle d'expérimentations** Ubuntu 16.04, ROS Kinetic, 64 Go RAM, 40 CPU, 2To SSD 
+
+Dans la pratique, l'empreinte mémoire du projet \p sp est négligeable dans le cas d'une expérience en réel. Pour les simulations, le moteur de rendu physique Gazeo constitue la limite principale.
+
+
+\section structureGenerale Structure Générale
 
 \subsection software Architecture Externe
 
@@ -99,9 +115,10 @@ Une courte (et imparfaite) analogie avec le fonctionnement d'un bateau (ancien) 
 - la **vigie** (lookout) fournit les positions des navires en manoeuvre
 
 
-
-
 \imageSize{boat.png,width:10cm;,rôle des *nodes*}
+
+\imageSize{rosgraph.png,width:15cm;,"Graphe des principaux échanges de données"}
+Dans le graphe ci-dessus, les flèches bleues représentent des dépendances de données résolues par l'appel de services ROS.
 
 \subsubsection active_connected Drones actifs et drones connectés
 
@@ -128,7 +145,7 @@ Dans le cas où le drone 4 rencontre une défaillance et doit atterir, c'est le 
 5 -> C
 ~~~
 
-\section Description individuelle des nodes
+\section desc Description individuelle des nodes
 
 \subsection sp_admiral Amiral
 
@@ -181,20 +198,63 @@ L'allocation est le processus de sélection des drones actifs. Étant donné un 
 
 Le node de contrôle se charge de guider les drones actifs sur le chemin défini par le Capitaine. Il détecte aussi les menaces de collisions et interromp les trajectoires le cas échéant.
 
-Une première méthode naïve, consistant à arrêter deux drones s'ils s'approchaient trop près l'un de l'autre. Cela conduit cependant à une immobilisation définitive des drones. Pour résoudre ce problème, on introduit une notion de priorité entre les trajectoire: les drones moins prioritaires doivent s'arrêter pour laisser passer les autres en cas de menace de collision.  
+\imageSize{rviz_control.gif,width:15cm;,"Contrôle des drones (RVIZ)}
 
-
+Une première méthode naïve, consistant à arrêter deux drones s'ils s'approchaient trop près l'un de l'autre. Cela conduit cependant à une immobilisation définitive des drones. Pour résoudre ce problème, on introduit une notion de priorité entre les trajectoire: les drones moins prioritaires doivent s'arrêter pour laisser passer les autres en cas de menace de collision. 
 
 \imageSize{control.png,width:10cm;,"Scénario d'évitement"}
 
-__Explication du scénario__ : On suppose ici que les drones (en rouge) 1, 2, 3 sont chargés de missions de priorités décroissantes. Les flèches indiquent la trajectoire à suivre jusqu'au prochain waypoint (en vert)
+__Explication du scénario__ : On suppose ici que les drones (en rouge) 1, 2, 3 sont chargés de missions de priorités décroissantes. Les flèches indiquent la trajectoire à suivre jusqu'au prochain waypoint (en vert). Les rectangles arrondis matérialisent la zone de sécurité autour de chaque trajectoire.
 - 1 suit sa trajectoire
 - 2, en revanche, menace de croiser 1. Il s'arrête à sa position, et reprendra sa course lorsque le chemin jusqu'au prochain waypoint est libre. 
 - 3 ne gêne aucun autre drone, et peut suivre sa trajectoire.
 
 
-\section todo TODO
 
-- modèle des observations plus complexe
-- détection des collisions plus sûre
+\subsection viz Visualisation
+
+Pour améliorer l'expérience de visualisation sur Gazebo, j'ai modifié le modèle URDF du drone pour qu'il illumine la zone dans son champ de vision. 
+
+\note Cette modification requiert une fonctionnalité arrivée dans Gazebo 9 (ROS Melodic). Sur l'ordinateur du LIX, où sont simulées les expériences, cette modification n'est pas visible.
+
+\imageSize{sp_crazy.jpg,width:10cm;,"Modèle 3D avec spot lumineux"}
+
+\section results Résultats
+
+\subsection demo Démonstration
+
+La vidéo de démonstration présentée en cours est accessible à https://youtu.be/HivgX3iqf3A.
+Elle illustre le comportement du système en deux phases:
+1. __Phase statique__: la planification n'est pas active, et on demande trois drones actifs.
+    On peut constater que lorsqu'un drone est déclaré défaillant, il atterit, et un autre décolle pour le remplacer
+2. __Phase dynamique__: Les nodes \p sp_admiral, \p sp_captain sont activées, les drones se déplacent. 
+    Une fois encore, on constate que le drone déclaré défaillant est remplacé (par le dernier, réparé entre temps).
+
+\subsection eval Évaluation du projet
+
+On peut identifier les aspects réussis, et à perfectionner:
+
+\subsubsection positif Aspects positifs
+
+Au terme du projet, le système a atteint un fonctionnement cohérent, et robuste aux fautes de drones en simulation. L'élaboration et le suivi des ordres sont fonctionnels, et la méthode d'évitement des collisions donne des résultats satisfaisants en terme de sécurité et d'efficacité (pas de blocages inutiles). 
+
+Sur le plan pédagogique, ce projet m'a permis d'explorer plusieurs aspects de ROS:
+- l'architecture d'un système et la communication entre ses composants internes
+- l'interfaçage et la communication avec des projets indépendants
+- la simulation avec Gazebo : écriture d'un plugin et d'un modèle URDF
+- la visualisation avec RVIZ
+- l'enregistrement et l'analyse des expériences à l'aide de \p rosbags
+
+\subsubsection amelio Aspects à poursuivre
+
+Il est bien entendu que chaque node bénéficierait de plus de temps pour la rendre plus efficace, ou plus robuste. S'il fallait citer trois points d'améliorations sur le système, ils seraient:
+
+1. __L'amélioration du contrôle en position en réel__. Le LPS donne une précision trop approximative pour les opérations demandées aux drones. Il est sujet à des dérives, ou sautes de position, qui déstabilisent le positionnement des drones, et causent fréquemment leur décrochage. Les solutions envisagées sont:
+    - "amollir" les constantes du PID de contrôle dans le firmware des crazyflie
+    - changer de système de localisation
+
+2. __Protection des drones durant les manoeuvres__: pour l'instant, le système de prévention de collisions ne surveille que les drones en altitude de vol et disponibles au commandes. Lorsqu'un drone décolle ou atterit, il existe un bref instant ou il est invisible pour les collisions - mais à l'altitude de travail. Une extension du processus de contrôle corrigerait cela.
+
+3. __Détection automatique interne de fautes__: pour ajouter à la pertinence du système, il serait intéressant que le drone embarque un module d'autodiagnostic sur sa position, sa réponse dynamique, sa batterie... Le système central pourrait alors recevoir des rapports de pannes et poser les drones en conséquence.
+
 */
