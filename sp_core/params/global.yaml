@@ -6,13 +6,13 @@ admiral:
   # number of steps to find the optimum.
   # if bigger, algorithm will better target optimal locations
   # however the locations will be farther from the drones, so that implies an additional burden on sp_captain node. Therefore, if captain fails too often, reduce this value
-  n_iterations: 100
+  n_iterations: 250
   # sight radius, in m
   drone_sight_radius: .3
   # optimisation rate, in Hz
   rate: .07
   # score increment per cycle
-  score_step_increment: 15
+  score_step_increment: 10
 
 captain:
   # update check rate, in Hz
@@ -33,7 +33,7 @@ mate:
 
   # number of drones max
   # should be set to a valid value by the launch file spawning the drones (see sp_mate simX_spawn.launch) [put here for completeness]
-  num_drones_total: 5
+  num_drones_total: 4
   
   # Hardware addresses of real drones
   # there are typically of the form : "0xE7E7E7xx"

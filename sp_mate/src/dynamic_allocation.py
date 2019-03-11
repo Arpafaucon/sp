@@ -70,8 +70,8 @@ class DynamicAllocation(object):
         # Params
         self.pm_num_connected_drones = int(
             rospy.get_param("/sp/mate/num_drones_total"))
-        self.pm_num_active_drones = int(
-            rospy.get_param("/sp/mate/num_drones_active"))
+        # self.pm_num_active_drones = int(
+        #     rospy.get_param("/sp/mate/num_drones_active"))
         self.pm_altitude = float(rospy.get_param("/sp/mate/altitude"))
         self.pm_transition_duration = float(
             rospy.get_param("/sp/mate/transition_duration", 2.))

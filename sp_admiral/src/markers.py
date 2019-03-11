@@ -16,6 +16,7 @@ def extract_coords(orders, target=True):
         return orders.target_xs, orders.target_ys
     return orders.current_xs, orders.current_ys
 
+MARKERS_LIFETIME = rospy.Duration(secs=15)
 COL_ALPHA = .5
 
 COL_CURRENT = ColorRGBA()
@@ -52,10 +53,11 @@ class AdmiralOrdersRviz(object):
         color = ColorRGBA()
         if target:
             color = COL_TARGET
-            marker_id = 0
+            ns = "orders.target"
         else:
             color = COL_CURRENT
-            marker_id = 1
+            ns = "orders.current"
+            
 
         viz = Marker()
         viz.header.stamp = rospy.Time()
@@ -63,11 +65,12 @@ class AdmiralOrdersRviz(object):
         viz.header.frame_id = '/map'
 
         viz.action = viz.MODIFY
-        viz.ns = 'orders'
-        viz.id = marker_id
+        viz.ns = ns
+        viz.id = 0
         viz.type = viz.POINTS
         viz.color = color
         viz.scale = self.scale
+        viz.lifetime = MARKERS_LIFETIME
 
         x_coords, y_coords = extract_coords(orders, target=target)
 
@@ -100,6 +103,7 @@ class AdmiralOrdersRviz(object):
         viz.type = viz.TEXT_VIEW_FACING
         viz.color = color
         viz.scale.z = .2
+        viz.lifetime = MARKERS_LIFETIME
 
         x_coords, y_coords = extract_coords(orders, target=False)
         for i_drone in range(orders.num_drones):
@@ -123,7 +127,7 @@ class AdmiralOrdersRviz(object):
             ns = 'sight.target.cone'
             color = COL_TARGET
         else:
-            ns = 'sight.current.cyl'
+            ns = 'sight.current.cone'
             color = COL_CURRENT
 
         x_coords, y_coords = extract_coords(orders, target=target)
@@ -139,7 +143,7 @@ class AdmiralOrdersRviz(object):
         viz.scale.x = 0
         viz.scale.y = 2*orders.sight_radius
         viz.scale.z = self.pm_altitude
-
+        viz.lifetime = MARKERS_LIFETIME
 
         for i_drone in range(orders.num_drones):
             viz.id = i_drone
@@ -182,6 +186,7 @@ class AdmiralOrdersRviz(object):
         viz.scale.x = 2*orders.sight_radius
         viz.scale.y = 2*orders.sight_radius
         viz.scale.z = CYL_HEIGHT
+        viz.lifetime = MARKERS_LIFETIME
 
 
         for i_drone in range(orders.num_drones):
@@ -218,6 +223,7 @@ class AdmiralOrdersRviz(object):
         viz.scale.x = 2*orders.sight_radius
         viz.scale.y = 2*orders.sight_radius
         viz.scale.z = 0.05
+        viz.lifetime = MARKERS_LIFETIME
 
         x_coords, y_coords = extract_coords(orders, target=target)
 
