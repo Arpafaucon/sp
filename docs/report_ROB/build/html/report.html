@@ -1,0 +1,251 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=9"/>
+<meta name="generator" content="Doxygen 1.8.11"/>
+<title>ROB 314: Rapport de projet ROB314</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<script type="text/javascript">
+  $(document).ready(function() { init_search(); });
+</script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr style="height: 56px;">
+  <td id="projectalign" style="padding-left: 0.5em;">
+   <div id="projectname">ROB 314
+   </div>
+  </td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Généré par Doxygen 1.8.11 -->
+<script type="text/javascript">
+var searchBox = new SearchBox("searchBox", "search",false,'Recherche');
+</script>
+  <div id="navrow1" class="tabs">
+    <ul class="tablist">
+      <li><a href="index.html"><span>Page&#160;principale</span></a></li>
+      <li class="current"><a href="pages.html"><span>Pages&#160;associées</span></a></li>
+      <li>
+        <div id="MSearchBox" class="MSearchBoxInactive">
+        <span class="left">
+          <img id="MSearchSelect" src="search/mag_sel.png"
+               onmouseover="return searchBox.OnSearchSelectShow()"
+               onmouseout="return searchBox.OnSearchSelectHide()"
+               alt=""/>
+          <input type="text" id="MSearchField" value="Recherche" accesskey="S"
+               onfocus="searchBox.OnSearchFieldFocus(true)" 
+               onblur="searchBox.OnSearchFieldFocus(false)" 
+               onkeyup="searchBox.OnSearchFieldChange(event)"/>
+          </span><span class="right">
+            <a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><img id="MSearchCloseImg" border="0" src="search/close.png" alt=""/></a>
+          </span>
+        </div>
+      </li>
+    </ul>
+  </div>
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<iframe src="javascript:void(0)" frameborder="0" 
+        name="MSearchResults" id="MSearchResults">
+</iframe>
+</div>
+
+</div><!-- top -->
+<div class="header">
+  <div class="headertitle">
+<div class="title">Rapport de projet ROB314 </div>  </div>
+</div><!--header-->
+<div class="contents">
+<div class="textblock"><p>Grégoire Roussel</p>
+<p>11 mars 2019</p>
+<h1><a class="anchor" id="Introduction"></a>
+Introduction</h1>
+<h2><a class="anchor" id="objectif"></a>
+Objectif</h2>
+<p>L'objectif du projet est de construire et valider expérimentalement un système de surveillance d'une zone impliquant plusieurs drones coordonnés. Les besoins identifiés pour le système sont :</p><ul>
+<li>optimiser les rondes des différents agents pour survoler chaque endroit le plus régulièrement possible</li>
+<li>planifier et faire exécuter des trajectoires sans collisions</li>
+<li>détecter des situations de défaillance des drones actifs: batterie, réponse anormale...</li>
+<li>garantir la robustesse du système en remplaçant à chaud les drones défaillants</li>
+<li>fournir un compte rendu visuel de la situation actuelle</li>
+</ul>
+<p>L'accent a été mis, non pas sur le développement d'un bloc scientifiquement innovant, mais sur la conception d'un système fonctionnel dans son ensemble, et qui me permette d'approfondir des problèmes récurrents d'un projet informatique complexe:</p><ul>
+<li>paramétrage</li>
+<li>interfaces et communications multi-processus</li>
+<li>utilisation de code extérieur</li>
+<li>réutilisation de code mis en commun</li>
+</ul>
+<p>Et des thématiques fréquentes de la programmation robotique :</p><ul>
+<li>localisation</li>
+<li>simulation</li>
+<li>commande et contrôle</li>
+<li>coordination de plusieurs agents</li>
+<li>visualisations pour permettre la compréhension du système</li>
+</ul>
+<h2><a class="anchor" id="techno"></a>
+Matériel et technologies</h2>
+<p>Dans l'expérience, les drones de surveillances sont des Crazyflie (bitcraze, <a href="https://www.bitcraze.io/crazyflie-2/">https://www.bitcraze.io/crazyflie-2/</a>). Ce sont des petits quadri-coptères très légers (environ 40g) contrôlables via radio par un ordinateur central.</p>
+<p>Cette base centrale exécute le méta-OS ROS: <a href="http://www.ros.org/">http://www.ros.org/</a> . Ce méta-OS, couramment utilisée lors du prototypage de robots facilite l'interaction entre processus et la conception de blocs fonctionnels modulaires et réutilisables. Elle fournit par ailleurs des outils de développement, de diagnostics et de visualisation qui simplifient la conception d'un système robotique. Dans ce projet, les outils <b>RVIZ</b> (outil de visualisation générique) et <b>Gazebo</b> (moteur de simulation) sont beaucoup utilisés.</p>
+<p> <style>div.image img[src="crazyflie20.jpg"]{width:10cm;}</style> </p><div class="image">
+<img src="crazyflie20.jpg" alt="crazyflie20.jpg"/>
+<div class="caption">
+drone Crazyflie 2.0</div></div>
+ <h1><a class="anchor" id="structureGenerale"></a>
+Structure Générale</h1>
+<h2><a class="anchor" id="outilsExt"></a>
+Outils externes</h2>
+<h3><a class="anchor" id="crazyflie"></a>
+Crazyflie</h3>
+<p>Outre leur disponibilité au laboratoire, le choix des Crazyflie se justifie par leur faible coût et leur grande robustesse aux chocs. Par ailleurs, la communauté ROS met à disposition des drivers et un programme de simulation aux <b>interfaces similaires</b>. Ainsi, le projet peut indépendamment contrôler des drones simulés ou réels, ou même une combinaison des deux.</p>
+<p>La salle d'expérimentation cyber-physique du LIX contient une dizaine de drone Crazyflie, et un dispositif de localisation externe: le Loco Positioning System. Chaque Crazyflie se positionne dans l'espace en comparant les délais de transmissions avec de multiples balises radio, en quelque sorte comme un GPS d'intérieur. La précision de ce système est de l'ordre de la dizaine de centimètres, avec une incertitude principalement sur l'altitude.</p>
+<div class="image">
+<img src="tdoa.png" alt="tdoa.png"/>
+<div class="caption">
+Exemple de résolution de la position en 2D avec 3 balises</div></div>
+ <h2><a class="anchor" id="software"></a>
+Architecture Externe</h2>
+<p>Le projet s'appuie sur deux <em>stacks</em> (ensembles de packages ROS) externes:</p>
+<h3><a class="anchor" id="crazyflie_ros"></a>
+crazyflie_ros</h3>
+<p>[Wolfgang Hoenig - <code>whoenig</code>], <a href="https://github.com/whoenig/crazyflie_ros">https://github.com/whoenig/crazyflie_ros</a>. Licence M.I.T.</p>
+<p>driver entre ROS et le protocole de communication crazyflie (CRTP: Crazyflie Real-Time Protocol). Fournit un serveur de commande auquel on peut connecter des crazyflies (réels ou virtuels). Pour chaque crazyflie sont rendus disponibles des services pour le contrôler, et les logs sous la formes de <em>topics</em>.</p>
+<p>Il fournit par ailleurs un modèle visuel 3D de Crazyflie pour Gazebo.</p>
+<h3><a class="anchor" id="sim_cf"></a>
+sim_cf</h3>
+<p>[Franck Djeumou - <code>wuwushrek</code>], <a href="https://github.com/wuwushrek/sim_cf">https://github.com/wuwushrek/sim_cf</a>.</p>
+<p>Module de simulation pour Crazyflie. Reçoit les commandes CRTP comme un drone réel, et simule la réponse logicielle, puis dynamique, par Gazebo. Le programme peut fonctionner en mode <b>SITL</b> (<em>Software in the Loop</em> : le logiciel du Crazyflie est simulé intégralement) ou <b>HITL</b> (<em>Hardware in the Loop</em>: un crazyflie réel est impliqué, mais ses réponses commandent des moteurs virtuels).</p>
+<p>J'ai travaillé à la migration de ce package sous ROS Melodic (il y a une mise à jour majeure de l'API de Gazebo entre Kinetic et Melodic - il fallait reprendre une partie du code des plugins Gazebo). A cours de l'année, j'ai aussi amélioré quelques fonctionnalités annexes (scripts de lancement et de configuration).</p>
+<h3><a class="anchor" id="agencement"></a>
+Architecture</h3>
+<p>Le diagramme ci-dessous illustre les relations et échanges entre les différents outils externes impliqués et le module <code>sp</code> du projet:</p><ul>
+<li>en <b>bleu</b> : lors d'une simulation</li>
+<li>en <b>rouge</b> : lors d'une expérience réelle</li>
+</ul>
+<p> <style>div.image img[src="outils.png"]{width:15cm;}</style> </p><div class="image">
+<img src="outils.png" alt="outils.png"/>
+<div class="caption">
+Architecture des packages</div></div>
+ <h2><a class="anchor" id="internArch"></a>
+Architecture interne</h2>
+<h3><a class="anchor" id="boat"></a>
+La métaphore du bateau</h3>
+<p>Une courte (et imparfaite) analogie avec le fonctionnement d'un bateau (ancien) permet d'introduire les <em>nodes</em> impliqués dans le fonctionnement de <code>sp</code>.</p><ul>
+<li>l'<b>amiral</b> donne l'objectif à atteindre: il donne la stratégie générale sous la forme de zones à atteindre, peu importe par quel navire</li>
+<li>le <b>capitaine</b> est chargé de réaliser cet ordre : il assigne à chaque vaisseau/drone une position à atteindre, et un itinéraire pour y parvenir</li>
+<li>le <b>second</b> (mate) contrôle l'exécution des ordres donnés, et évite les éventuelles collisions entre navires.</li>
+<li>la <b>vigie</b> (lookout) fournit les positions des navires en manoeuvre</li>
+</ul>
+<p> <style>div.image img[src="boat.png"]{width:10cm;}</style> </p><div class="image">
+<img src="boat.png" alt="boat.png"/>
+<div class="caption">
+rôle des nodes</div></div>
+<h3><a class="anchor" id="active_connected"></a>
+Drones actifs et drones connectés</h3>
+<p>Outre son rôle de contrôle, le second est souvent chargé du rôle d'organisation des équipes de travail. Dans notre système, ce sera lui qui sera chargé de décoller et atterir les drones en fonction des besoins et des pannes pour maintenir la capacité opérationnelle demandée.</p>
+<p>Pour faciliter le travail de la planification, on introduit l'abstraction d'<b>identifiant de drone actif</b>, pour désigner un drone disponible pour accomplir des missions de surveillance, sans plus de précisions sur son identité. Par opposition, chaque drone du système, réel ou simulé, possède un unique <b>identifiant de drone connecté</b> fixé.</p>
+<p> <style>div.image img[src="activeVsConnected.png"]{width:10cm;}</style> </p><div class="image">
+<img src="activeVsConnected.png" alt="activeVsConnected.png"/>
+<div class="caption">
+Drones actifs / connectés</div></div>
+<p><b>Exemple</b> : dans l'image ci-dessous, les identifiants connectés sont <code>[1,2,3,4,5]</code>, et il y trois drones actifs, identifiés par <code> [A, B, C] </code>. Pour l'instant, l'allocation des ressources est la suivante: </p><div class="fragment"><div class="line">1 -&gt; A</div><div class="line">2 -&gt; (en attente)</div><div class="line">3 -&gt; B</div><div class="line">4 -&gt; (en attente)</div><div class="line">5 -&gt; C</div></div><!-- fragment --><p> Dans le cas où le drone 4 rencontre une défaillance et doit atterir, c'est le rôle du second de faire décoller un autre drone, disons #4, pour maintenir la capacité opérationnelle à trois drones actifs. In fine: </p><div class="fragment"><div class="line">1 -&gt; A</div><div class="line">2 -&gt; (en attente)</div><div class="line">3 -&gt; (défaillant)</div><div class="line">4 -&gt; B</div><div class="line">5 -&gt; C</div></div><!-- fragment --><h1><a class="anchor" id="Description"></a>
+individuelle des nodes</h1>
+<h2><a class="anchor" id="sp_admiral"></a>
+Amiral</h2>
+<p>Le node <code>sp_admiral</code> gère et optimise la surveillance à long terme de la zone. Il fonctionne par "périodes d'observation" (de durée réglable, de l'ordre d'une dizaine de secondes), et donne à chaque début de période des objectifs à surveiller par les drones actifs.</p>
+<p>Il maintient une <em>grid map</em> des zones visitées avec un score pour chaque cellule libre de la carte. Le score croît avec le temps, et est remis à zéro quand un drone le drone observe la cellule à la fin de la période. Les ordres de l'amiral sont issus d'une optimisation de l'état du système <img class="formulaInl" alt="$ [x_a, y_a, x_b, y_b, ...] $" src="form_0.png"/> du système par une méthode de <b>recuit simulé</b>.</p>
+<p>Pour ceci,</p>
+<p> <style>div.image img[src="rviz_admiral1.gif"]{width:15cm;}</style> </p><div class="image">
+<img src="rviz_admiral1.gif" alt="rviz_admiral1.gif"/>
+<div class="caption">
+Ordres de l'Amiral (RVIZ)</div></div>
+<p>Sur l'image ci-dessus, on peut observer:</p><ul>
+<li>la carte de la zone (les obstacles sont représentés par des cellules noires)</li>
+<li>la carte des scores:<ul>
+<li>bleu : score faible, zone récemment visitée</li>
+<li>rouge : score élevée, zone intéressante à visiter</li>
+</ul>
+</li>
+<li>cônes rouges: zones observées par les drones à la fin de la période précédente</li>
+<li>cônes verts: objectifs à observer pour cette période</li>
+<li>[A, B, C, D]: identifiants des drones actifs</li>
+</ul>
+<h2><a class="anchor" id="sp_captain"></a>
+Capitaine</h2>
+<p>Le capitaine élabore et complète les ordres donnés par l'amiral. À partir de la liste des positions, il calcule:</p><ul>
+<li>l'assignation optimale de chaque drone actif vers un des objectifs</li>
+<li>une trajectoire pour y parvenir</li>
+</ul>
+<p>L'algorithme utilisé est un RRT* multi-agent, avec la variante que l'association départ-arrivée n'est pas donnée. L'algorithme construit ainsi pour chaque point de départ un arbre vers chaque destination. Après un nombre déterminé d'étapes, il cherche l'assignation qui minimise le coût global du déplacement (maximum des distances à parcourir pour chaque drone).</p>
+<p> <style>div.image img[src="rviz_captain2.gif"]{width:15cm;}</style> </p><div class="image">
+<img src="rviz_captain2.gif" alt="rviz_captain2.gif"/>
+<div class="caption">
+Ordres du Capitaine (RVIZ)</div></div>
+<p>Sur l'image ci-dessus, on observe:</p><ul>
+<li>ronds verts: objectifs à observer pour cette période (donnés par l'Amiral)</li>
+<li>points rouges et [A, B, C, D]: positions actuelles des drones actifs</li>
+<li>ligne jaune: trajectoires calculées entre les positions actuelles et l'objectif assigné (Capitaine)</li>
+</ul>
+<h2><a class="anchor" id="sp_mate"></a>
+Second</h2>
+<h3><a class="anchor" id="allocation"></a>
+Allocation des drones</h3>
+<p>L'allocation est le processus de sélection des drones actifs. Étant donné un objectif de N drones actifs, le second fait décoller ou atterir le nombre adapté de drones. Il surveille leur état pendant ces manoeuvres, et informe le reste du système :</p><ul>
+<li>du nombre de drones actuellement actifs (utilisé par l'amiral puis le second pour la planification)</li>
+<li>de la correspondance identifiant actif-connecté (utilisé par le contrôle et la vigie)</li>
+<li>de l'état et mode de chacun des drones connectés (utilisé pour la détection des défaillances)</li>
+</ul>
+<p> <style>div.image img[src="mate_allocation.png"]{width:15cm;}</style> </p><div class="image">
+<img src="mate_allocation.png" alt="mate_allocation.png"/>
+<div class="caption">
+États et modes des drones</div></div>
+ <h3><a class="anchor" id="control"></a>
+Contrôle et évitement des collisions</h3>
+<p>Le node de contrôle se charge de guider les drones actifs sur le chemin défini par le Capitaine. Il détecte aussi les menaces de collisions et interromp les trajectoires le cas échéant.</p>
+<p>Une première méthode naïve, consistant à arrêter deux drones s'ils s'approchaient trop près l'un de l'autre. Cela conduit cependant à une immobilisation définitive des drones. Pour résoudre ce problème, on introduit une notion de priorité entre les trajectoire: les drones moins prioritaires doivent s'arrêter pour laisser passer les autres en cas de menace de collision.</p>
+<p> <style>div.image img[src="control.png"]{width:10cm;}</style> </p><div class="image">
+<img src="control.png" alt="control.png"/>
+<div class="caption">
+Scénario d'évitement</div></div>
+<p> <b>Explication du scénario</b> : On suppose ici que les drones 1, 2, 3 sont chargés de missions de priorités décroissantes.</p><ul>
+<li>1 suit sa trajectoire</li>
+<li>2, en revanche, menace de croiser 1. Il s'arrête à sa position, et reprendra sa course lorsque le chemin jusqu'au prochain waypoint est libre.</li>
+<li>3 ne gêne aucun autre drone, et peut suivre sa trajectoire.</li>
+</ul>
+<h1><a class="anchor" id="todo"></a>
+TODO</h1>
+<ul>
+<li>modèle des observations plus complexe</li>
+<li>détection des collisions plus sûre </li>
+</ul>
+</div></div><!-- contents -->
+<!-- HTML footer for doxygen 1.8.11-->
+<!-- start footer part -->
+  <hr class="footer" />
+  <address class="footer"><small>
+      <!-- Généré par &#160;<a href="http://www.doxygen.org/index.html">
+<img class="footer" src="doxygen.png" alt="doxygen"/>
+</a> 1.8.11 -->
+    </small></address>
+  </body>
+  </html>

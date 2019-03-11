@@ -92,7 +92,7 @@ Le diagramme ci-dessous illustre les relations et échanges entre les différent
 \subsection internArch Architecture interne
 
 \subsubsection boat La métaphore du bateau
-Une courte (et imparfaite) analogie avec le fonctionnement d'un bateau (ancien) permet d'introduire les *nodes* impliquées dans le fonctionnement de \p sp.
+Une courte (et imparfaite) analogie avec le fonctionnement d'un bateau (ancien) permet d'introduire les *nodes* impliqués dans le fonctionnement de \p sp.
 - l'**amiral** donne l'objectif à atteindre: il donne la stratégie générale sous la forme de zones à atteindre, peu importe par quel navire
 - le **capitaine** est chargé de réaliser cet ordre : il assigne à chaque vaisseau/drone une position à atteindre, et un itinéraire pour y parvenir
 - le **second**  (mate) contrôle l'exécution des ordres donnés, et évite les éventuelles collisions entre navires.
@@ -132,14 +132,14 @@ Dans le cas où le drone 4 rencontre une défaillance et doit atterir, c'est le 
 
 \subsection sp_admiral Amiral
 
-Le node `sp_admiral` est responsable de gérer et optimiser la surveillance à long terme de la zone. Il fonctionne par "périodes d'observation" (de durée réglable, de l'ordre d'une dizaine de secondes), et donne à chaque début de période des objectifs à surveiller par les drones actifs.
+Le node `sp_admiral` gère et optimise la surveillance à long terme de la zone. Il fonctionne par "périodes d'observation" (de durée réglable, de l'ordre d'une dizaine de secondes), et donne à chaque début de période des objectifs à surveiller par les drones actifs.
 
 Il maintient une *grid map* des zones visitées avec un score pour chaque cellule libre de la carte.
 Le score croît avec le temps, et est remis à zéro quand un drone le drone observe la cellule à la fin de la période. Les ordres de l'amiral sont issus d'une optimisation de l'état du système \f$ [x_a, y_a, x_b, y_b, ...] \f$ du système par une méthode de **recuit simulé**.
 
 Pour ceci, 
 
-\imageSize{rviz_admiral2.png,width:15cm;,"Ordres de l'Amiral (RVIZ)"}
+\imageSize{rviz_admiral1.gif,width:15cm;,"Ordres de l'Amiral (RVIZ)"}
 Sur l'image ci-dessus, on peut observer:
 - la carte de la zone (les obstacles sont représentés par des cellules noires)
 - la carte des scores:
@@ -150,8 +150,51 @@ Sur l'image ci-dessus, on peut observer:
 - [A, B, C, D]: identifiants des drones actifs
 
 
+\subsection sp_captain Capitaine
+
+Le capitaine élabore et complète les ordres donnés par l'amiral. À partir de la liste des positions, il calcule:
+- l'assignation optimale de chaque drone actif vers un des objectifs
+- une trajectoire pour y parvenir
+
+L'algorithme utilisé est un RRT* multi-agent, avec la variante que l'association départ-arrivée n'est pas donnée. L'algorithme construit ainsi pour chaque point de départ un arbre vers chaque destination. Après un nombre déterminé d'étapes, il cherche l'assignation qui minimise le coût global du déplacement (maximum des distances à parcourir pour chaque drone).
+
+
+
+\imageSize{rviz_captain2.gif,width:15cm;,"Ordres du Capitaine (RVIZ)"}
+Sur l'image ci-dessus, on observe:
+- ronds verts: objectifs à observer pour cette période (donnés par l'Amiral)
+- points rouges et [A, B, C, D]: positions actuelles des drones actifs
+- ligne jaune: trajectoires calculées entre les positions actuelles et l'objectif assigné (Capitaine)
+
+\subsection sp_mate Second
+
+\subsubsection allocation Allocation des drones
+
+L'allocation est le processus de sélection des drones actifs. Étant donné un objectif de N drones actifs, le second fait décoller ou atterir le nombre adapté de drones. Il surveille leur état pendant ces manoeuvres, et informe le reste du système :
+- du nombre de drones actuellement actifs (utilisé par l'amiral puis le second pour la planification)
+- de la correspondance identifiant actif-connecté (utilisé par le contrôle et la vigie)
+- de l'état et mode de chacun des drones connectés (utilisé pour la détection des défaillances)
+
+\imageSize{mate_allocation.png,width:15cm;,"États et modes des drones"}
+
+\subsubsection control Contrôle et évitement des collisions
+
+Le node de contrôle se charge de guider les drones actifs sur le chemin défini par le Capitaine. Il détecte aussi les menaces de collisions et interromp les trajectoires le cas échéant.
+
+Une première méthode naïve, consistant à arrêter deux drones s'ils s'approchaient trop près l'un de l'autre. Cela conduit cependant à une immobilisation définitive des drones. Pour résoudre ce problème, on introduit une notion de priorité entre les trajectoire: les drones moins prioritaires doivent s'arrêter pour laisser passer les autres en cas de menace de collision.  
+
+
+
+\imageSize{control.png,width:10cm;,"Scénario d'évitement"}
+
+__Explication du scénario__ : On suppose ici que les drones 1, 2, 3 sont chargés de missions de priorités décroissantes.
+- 1 suit sa trajectoire
+- 2, en revanche, menace de croiser 1. Il s'arrête à sa position, et reprendra sa course lorsque le chemin jusqu'au prochain waypoint est libre. 
+- 3 ne gêne aucun autre drone, et peut suivre sa trajectoire.
+
 
 \section todo TODO
 
 - modèle des observations plus complexe
+- détection des collisions plus sûre
 */
