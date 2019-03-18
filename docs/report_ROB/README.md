@@ -2,7 +2,7 @@
 
 ## Generation
 
-> **Note**: LaTex is only required to render the following formula :[x_a, x_b, y_a, y_b]. In its absence, the document remains perfectly readable.
+> **Note**: LaTeX is only required to render the following formula :[x_a, x_b, y_a, y_b]. In its absence, the document remains perfectly readable.
 ```sh
 make html
 
