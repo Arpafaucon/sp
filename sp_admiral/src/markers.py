@@ -16,7 +16,7 @@ def extract_coords(orders, target=True):
         return orders.target_xs, orders.target_ys
     return orders.current_xs, orders.current_ys
 
-MARKERS_LIFETIME = rospy.Duration(secs=15)
+MARKERS_LIFETIME = rospy.Duration(secs=30)
 COL_ALPHA = .5
 
 COL_CURRENT = ColorRGBA()

@@ -268,7 +268,7 @@ class RosRrtWrapper(object):
         :return: RRT result in world frome
         :rtype: multi_rrt.RRTPath
         """
-        wres = arrts_multi.RRTPath(
+        wres = multi_rrt.RRTPath(
             res.i_start, res.i_end, 0, None, valid=res.valid)
         wres.cost = res.cost * self.map_resolution
         w_path = []

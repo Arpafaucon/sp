@@ -1,56 +1,71 @@
 admiral:
   # wall_radius, in m
+  # Inflation is performed around walls to discourage flying near obstacles
+  # this setting control the effect radius
   wall_radius: .3
-  # simulated recoil inital temperature. The hotter it is, the more likely will unpromising directions be explored during target position optimisation
+  # simulated recoil inital temperature.
+  # The hotter it is, the more likely will unpromising directions be explored during target position optimisation
   initial_temp: 100
   # number of steps to find the optimum.
   # if bigger, algorithm will better target optimal locations
   # however the locations will be farther from the drones, so that implies an additional burden on sp_captain node. Therefore, if captain fails too often, reduce this value
   n_iterations: 250
   # sight radius, in m
+  # drone field of view is a circle centered on its position, and whose radius is this parameter
   drone_sight_radius: .3
   # optimisation rate, in Hz
+  # rate at which:
+  # - the system get a reward from the currently observed cells
+  # - perform target optimisation process
+  # - publishes new targets
+  # Setting it too high will not give to the system the time to reach the targets before new ones are published
   rate: .07
   # score increment per cycle
+  # setting it higher will make the map turn faster to 'red' on rviz
+  # optimisation-wise, it shouldn't affect a lot the process. Note that scores are capped to 255, so setting a high increment will make old cells hit that cap faster.
+  # In that case, the system won't have any incentives to visit the old (=visited a long time age) maxed(=whose score reached the max value) cells in contrast to young (=visited more recently) capped cells
   score_step_increment: 10
 
 captain:
   # update check rate, in Hz
+  # rate at which:
+  # - trajectories from current drones location to targets are computed
+  # - the drone-target matching is done
+  # - the resulting trajectories for each drone are published
   rate: .4
   # max number of iterations to find trajectory tree
-  iterations: 200
+  # RRT process will stop after that many steps
+  # Setting it higher will :
+  # - take more time
+  # - increase the chance a set of trajectories for each drone-target is found
+  # - ensure more optimised trajectories
+  iterations: 300
   # expand distance, in meters
   # if map is convex enough, you can increase that distance to allow faster waypoint calculation. However, you risk that some trajectories cross  wall corners
   expand_distance: 1.5
-  # enabling the debug animation window will show internal RRT process.
+  # enabling the debug animation window will show internal RRT progress through a matplotlib window.
   # this will slow down **A LOT** the process
   debug_animation: False
 
 mate:
-  # SETUP PARAMETERS
-  # set to false to use real robots
-  # simulation_mode: true
+  # number of drones connected to the system
+  # should be set to a valid value, in accordance with the launch file spawning the drones
+  # (if running sp_mate simX_spawn.launch, the value here should be X)
+  # the stack will assume that they are connected to namespaces 'cf1' to 'cfN'
+  num_drones_total: 5
 
-  # number of drones max
-  # should be set to a valid value by the launch file spawning the drones (see sp_mate simX_spawn.launch) [put here for completeness]
-  num_drones_total: 4
-  
-  # Hardware addresses of real drones
-  # there are typically of the form : "0xE7E7E7xx"
-  # there must be at least 'num_drones_total' of those addresses
-  # drones_hw_addresses : [
-  #   "0xE7E7E7E1",
-  #   "0xE7E7E7E2",
-  #   "0xE7E7E7E3",
-  #   "0xE7E7E7E4",
-  # ]
   # OPERATIVE PARAMETERS
   # control loop rate, Hz
+  # rate at which :
+  # - drones' progress towards their goals are checked,
+  # - goals are updated if needed,
+  # - collisions tests are performed
   control_rate: 2
-  
+
   # flight altitude, m
+  # hover altitude for the surveillance system
   altitude : 1
-  # tolerance around landing and takeoff altitude objectives, 
+  # tolerance around landing and takeoff altitude objectives,
   # x means:
   #  - takeoffs are finished once z > (1-x)*altitude
   #  - landings are finished once z <     x*altitude
@@ -59,24 +74,35 @@ mate:
   # the longer it is set, the more stable the drones will be
   transition_duration: 5
   # tolerance radius around goals, m
+  # once the drone is within that radius of its given goal, it will:
+  # - proceed to next goal
+  # - or stop if it is its final target
+  # decreasing this value will increase the system precision, at the cost of slower trajectories
+  # setting it at lower values than the localisation resolution will likely mess with the system,
+  # as drone won't be able to know where to go exactly to reach the goal (their positions won't be precise enough)
   goal_radius : .1
   # collision detection radius, m
-  # the collision distance is the distance between a drone wayline segment and another (higher priority) drone position 
-  # if that distance is less than the threshold set below, the drone mission is paused, and the lesser priority drone stays in place
-
+  # the collision distance is the distance between a drone wayline segment and another (higher priority) drone position
+  # if that distance is less than the threshold set below,
+  # the lesser priority has its mission paused, and stays in place
   collision_distance: .1
 
   # limit max to the distance to the target given to /cfX/go_to, in m
-  # if too large, drones will do too quick trajectories when given distant orders, and will probably collide
+  # if too large, drones will do too quick trajectories when given distant orders. They will often overshoot, and have less precise trajectories.
+  # This will likely result in more collisions
   goto_distance_cap: 1
   # duration deadline given to /cfX/go_to, in s
+  # If the drone can make it in less than that time, it will.
+  # Thus, setting this value too low will have same effects as having a too large cap : overshoots, instabilities, collisions
   goto_duration: 3
 
   # DRONE MANAGEMENT
+  # rate at which the allocation table is updated
   allocation_rate: 1
 
 
 lookout:
   # position update rate, Hz
+  # rate at which drone positions are polled and made available to other nodes
   rate: 5
 

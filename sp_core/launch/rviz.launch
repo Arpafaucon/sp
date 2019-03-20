@@ -1,3 +1,3 @@
 <launch>
-    <node pkg="rviz" type="rviz" name="sp_viz" args="-d $(find sp_core)/viz/sp.rviz"/>
+    <node pkg="rviz" type="rviz" name="sp2_viz" args="-d $(find sp_core)/viz/sp.rviz"/>
 </launch>

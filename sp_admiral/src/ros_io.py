@@ -23,7 +23,6 @@ from support import _prepare_map
 DEFAULT_PARAM_NS = "/sp/admiral"
 NODE_NAME = "admiral_node"
 
-STATUS_TOPIC = "admiral_status"
 SCORE_TOPIC = "admiral_score"
 ORDERS_TOPIC = "admiral_orders"
 SWARM_POSITION_TOPIC = "/sp/swarm_position"
@@ -51,8 +50,6 @@ class AdmiralRosInterface(object):
 
     def __init__(self):
         rospy.init_node(name=NODE_NAME)
-        self.status_pub = rospy.Publisher(
-            "/sp/"+STATUS_TOPIC, AdmiralStatus, queue_size=QUEUE_SIZE)
         self.score_pub = rospy.Publisher(
             "/sp/"+SCORE_TOPIC, OccupancyGrid, queue_size=QUEUE_SIZE)
         self.orders_pub = rospy.Publisher(
@@ -260,8 +257,6 @@ class AdmiralRosInterface(object):
         """
         self.publish_orders(state_current, state_target, num_drones, convergence_steps, score, avg_score)
         self.publish_score(obs_map)
-        # self._publish_status(num_drones, state_current,
-                            #  state_target, convergence_steps, score, avg_score)
         rospy.loginfo('Admiral messages published')
 
     def publish_orders(self, state_current, state_target, num_drones, convergence_steps, score, avg_score ):
@@ -298,33 +293,33 @@ class AdmiralRosInterface(object):
 
         self.orders_pub.publish(orders)
 
-    def _publish_status(self,
-                        num_drones, state_current, state_target,
-                        convergence_steps, score, avg_score):
-        """
-        @Deprecated
-        """
-        curr_is, curr_js = self._extract_xy(state_current)
-        target_is, target_js = self._extract_xy(state_target)
+    # def _publish_status(self,
+    #                     num_drones, state_current, state_target,
+    #                     convergence_steps, score, avg_score):
+    #     """
+    #     @Deprecated
+    #     """
+    #     curr_is, curr_js = self._extract_xy(state_current)
+    #     target_is, target_js = self._extract_xy(state_target)
 
-        ad_stat = AdmiralStatus()
-        ad_stat.header.seq = self.seq
-        ad_stat.header.stamp = rospy.Time.now()
-        self.seq += 1
+    #     ad_stat = AdmiralStatus()
+    #     ad_stat.header.seq = self.seq
+    #     ad_stat.header.stamp = rospy.Time.now()
+    #     self.seq += 1
 
-        ad_stat.num_drones = num_drones
-        ad_stat.current_is = curr_is
-        ad_stat.current_js = curr_js
-        ad_stat.target_is = target_is
-        ad_stat.target_js = target_js
+    #     ad_stat.num_drones = num_drones
+    #     ad_stat.current_is = curr_is
+    #     ad_stat.current_js = curr_js
+    #     ad_stat.target_is = target_is
+    #     ad_stat.target_js = target_js
 
-        # ad_stat.i_coords = i_coords
-        # ad_stat.j_coords = j_coords
-        ad_stat.num_convergence_steps = convergence_steps
-        ad_stat.score = score
-        ad_stat.avg_score = avg_score
+    #     # ad_stat.i_coords = i_coords
+    #     # ad_stat.j_coords = j_coords
+    #     ad_stat.num_convergence_steps = convergence_steps
+    #     ad_stat.score = score
+    #     ad_stat.avg_score = avg_score
 
-        self.status_pub.publish(ad_stat)
+    #     self.status_pub.publish(ad_stat)
 
 
     def publish_score(self, obs_map):
