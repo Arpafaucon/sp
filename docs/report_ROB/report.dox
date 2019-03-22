@@ -138,7 +138,7 @@ __Exemple__ : dans l'image ci-dessous, les identifiants connectés sont <code>[1
 4 -> (en attente)
 5 -> C
 ~~~
-Dans le cas où le drone 4 rencontre une défaillance et doit atterir, c'est le rôle du second de faire décoller un autre drone, disons #4, pour maintenir la capacité opérationnelle à trois drones actifs. In fine:
+Dans le cas où le drone 3 rencontre une défaillance et doit atterir, c'est le rôle du second de faire décoller un autre drone, disons #4, pour maintenir la capacité opérationnelle à trois drones actifs. In fine:
 ~~~
 1 -> A
 2 -> (en attente)
