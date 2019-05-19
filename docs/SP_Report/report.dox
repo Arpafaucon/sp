@@ -85,11 +85,11 @@ Le comportement du système est évalué dans deux phases:
     - les changements effectués dans l'allocation des missions aux drones pendant cette durée de transition
     - le contrôle et le suivi des manoeuvres de décollage et atterissage
 
-- la **phase dynamique**: la planification est active, les drones recoive des destinations à atteindre (et surveiller). On évalue, lors d'une panne:
+- la **phase dynamique**: la planification est active, les drones reçoivent des destinations à atteindre (et surveiller). On évalue, lors d'une panne:
     - la vitesse de réadaptation du système à une indisponibilité de drone
-    - la vitesse de transfert des missions existantes au nouveau set de drone disponibles
-    - l'importance des changements durant cette réallocation
-    - la robustesse du système en cas de sur-panne durant la résolution de la première
+    - la vitesse de transfert des missions existantes au nouveau set de drones disponibles
+    - l'amplitude des changements durant cette réallocation
+    - la robustesse du système en cas de sur-panne 
     - (en permanence) l'évitement des collisions, que ce soit avec des drones en manoeuvres (décollage, atterissage) ou en missions
 
 \section work Réalisation
@@ -103,7 +103,7 @@ Dans l'expérience, les drones de surveillances sont des Crazyflie (bitcraze, ht
 Outre leur disponibilité au laboratoire, le choix des Crazyflie se justifie par leur faible coût et leur grande robustesse aux chocs. Par ailleurs, la communauté ROS met à disposition des drivers et un programme de simulation aux **interfaces similaires**. Ainsi, le projet peut indépendamment contrôler des drones simulés ou réels, ou même une combinaison des deux.
 
 La capacité calculatoire des Crazyflie est limitée, mais non-nulle. Ainsi, il est possible de modifier le software originel pour y ajouter des procédures de vérification de la trajectoire, des paramètres de vol, ou prétraiter les données acquise avant envoi.
-C'est une piste intéressante, qui n'a néanmoins pas été explorée. Elle figure en bonne place des pistes de développement du projet.
+C'est une piste intéressante, qui n'a néanmoins pas été explorée. Elle figure en bonne place dans les pistes de développement du projet.
 
 \imageSize{crazyflie20.jpg,width:10cm;,"drone Crazyflie 2.0"}
 \imageSize{drone_closeup_2.jpg,width:10cm;,"Modèle Gazebo de simulation"}
@@ -130,25 +130,28 @@ Les mesures de localisations obtenues par ce moyen sont relativement justes, mai
 
 Lorsque les drones recoivent des ordes en position, ces sauts induisent une forte instabilité, qui peut aller jusque causer la chute du drone. Cela nuit drastiquement à la qualité des expériences avec des drones réels.
 
-Pour résoudre ce problème, j'ai adapté mon contrôle en position de manière à augmenter la tolérance et limiter les micro-ajustements, qui sont les opérations les plus risquées. Cela améliore la situation légerement, d'autres pistes sont évoquées en fin de rapport.
+Pour résoudre ce problème, j'ai adapté mon contrôle en position de manière à augmenter la tolérance et limiter les micro-ajustements, qui sont les opérations les plus risquées. Cela améliore la situation légèrement, d'autres pistes sont évoquées en fin de rapport.
 
 \subsubsection communication Fiabilité des communications
 
 Il est apparu, plus tard dans l'année cette fois-ci, que certains canaux de communication n'étaient pas assez fiables pour être utilisés tels quels. En voici deux exemples: 
 
 __Publication de positions invalides__:
- lorsque la connection avec le drone est mauvaise, le driver CRTP-ROS ne publie pas toujours la position réelle du drone. Lorsque les données n'ont pas pu être récupérées, une trame nulle est publiée sur le topic de position. Avant sa détection, ce comportement plongeait le système dans un état incohérent, certains drones en vols étant détectés sous le sol (et en collision si cela arrivait à deux drones en même temps).
+ lorsque la connection avec le drone est mauvaise, le driver CRTP-ROS n'arrive pas à récupérer à temps les logs envoyés par le drones. Lorsque cela se produit, une trame nulle (tous les champs mis à zéro) est publiée sur le topic de position. 
+ Avant sa détection, ce comportement plongeait le système dans un état incohérent, certains drones en vols étant détectés sous le sol (et en collision au point  ``(0,0,0)`` si cela arrive à deux drones en même temps).
 Un filtrage a résolu ce problème, au prix d'une perte de fréquence des messages de position.
 
 __Conflit d'ordres__:
-Lorsqu'un drone est sorti du pool actif, il reçoit un ordre d'atterissage. Le fonctionnement interne de ROS fait qu'il peut arriver qu'un ordre de déplacement émis avant la sortie du pool soit reçu aprés le début de la phase d'atterissage. Cette phase est annulée, et le drone suit les indications de l'ordre retardataire.
-Pour résoudre ce problème, la gestion des changements d'états a été rendue plus robustes. Lors d'un atterissage, par exemple, l'ordre d'atterir est émis périodiquement, jusqu'à ce que le drone atteigne une altitude-plancher. 
+Lorsqu'un drone est sorti du pool actif, il reçoit un ordre d'atterissage. 
+Le fonctionnement interne de ROS fait qu'il peut arriver qu'un ordre de déplacement émis avant la sortie du pool soit reçu aprés le début de la phase d'atterissage. 
+La procédure d'atterissage est annulée, et le drone suit les indications de l'ordre retardataire. 
+Pour résoudre ce problème, la gestion des changements d'états a été rendue plus robuste. Lors d'un atterissage, par exemple, l'ordre d'atterir est émis périodiquement, jusqu'à ce que le drone atteigne une altitude-plancher. Cela permet d'imposer l'atterissage malgré des éventuels ordres contradictoires rémanents. 
 
 \subsubsection propagation Propagation des résultats
 
 La propagation des ordres dans le système fonctionne en cascade : les ordres de l'admiral déclenchent le travail du capitaine, puis celui du second. Mais cette propagation prend du temps (de l'ordre de quelques secondes, la plupart dues à la planification de trajectoire).
 
-Il peut arriver que l'allocation change pendant cette propagation. Dans ces cas, le capitain risque alors de demander la position d'un drone actif qui n'existe plus, ou au contraire émettre des ordres qui ne prennent pas en compte un drone tout juste devenu actif. Ces situations causent au mieux un perte d'efficacité, au pire une erreur dans le programme.
+Il peut arriver que l'allocation change pendant cette propagation. Dans ces cas, le capitain risque alors de demander la position d'un drone actif qui n'existe plus, ou au contraire émettre des ordres qui ne prennent pas en compte un drone tout juste devenu actif. Ces situations causent au mieux une perte d'efficacité, au pire une erreur dans le programme.
 
 Ainsi, un défaut dans la propagation des changements d'allocation dans \p lookout causait une mauvaise association des positions aux drones actifs, et à des collisions systématiques.
 
@@ -210,21 +213,21 @@ Comme on peut le lire plus haut, et le constater par les vidéos de démonstrati
 
 Quelques pistes pour résoudre ce problème seraient:
 - le changement de système de localisation: l'installation d'un système OptiTrack (système optique, précision de l'ordre du mm) à l'ENSTA permettra de juger des améliorations à espérer
-- le passage à un contrôle plus bas niveau sur les vitesse: parfaitement faisable, mais plus chronophage, car il faut déterminer les paramètres dynamiques appropriés
+- le passage à un contrôle plus bas niveau sur les vitesse: parfaitement faisable, mais plus difficile à développer, car il faut déterminer les paramètres dynamiques appropriés
 - la modification du code embarqué du Crazyflie pour "amollir" sa réponse aux sautes de position et augmenter sa stabilité (changement des coefficients du PID)
 
 \subsubsection collision Collisions et obstacles
 
-__La procédure de détection et de résolution des collisions est loin d'être parfaite__. Il existe encore plusieurs scénarios de bloquage, et pire, de non-protection: par exemple quand deux drones arrivent face-à-face. En l'absence de capteurs de proximité, cette méthode doit gagner en fiabilité et permettre une meilleure anticipation.
+__1. La procédure de détection et de résolution des collisions est loin d'être parfaite__. Il existe encore plusieurs scénarios de bloquage, et pire, de non-protection: par exemple quand deux drones arrivent face-à-face. En l'absence de capteurs de proximité, cette méthode doit gagner en fiabilité et permettre une meilleure anticipation.
 
  Des techniques de navigation fondées sur le flux optique ("Navigation des drones par flux optique", S. Doncieux et A. Angeli) semblent prometteuses pour résoudre les conflits.
 L'article "Trajectory Planning for Quadrotor Swarms" (W. Hönig et al.) fournit par ailleurs une approche calculatoire, mais garantie, pour planifier des trajectoires spatio-temporelles exemptes de collisions.
 
-__Par ailleurs, aucune vérification n'est faite au bas-niveau sur la présence d'obstacles fixes__. En l'absence de capteurs, cela revient à vérifier sur la carte que le drone ne se dirige pas vers des cases occupées. 
+__2. Par ailleurs, aucune vérification n'est faite au bas-niveau sur la présence d'obstacles fixes__. En l'absence de capteurs, cela revient à vérifier sur la carte que le drone ne se dirige pas vers des cases occupées. 
 
 Vu la précision du système de localisation, une telle vérification manque encore de pertinence, et n'a pas été jugée prioritaire à implémenter. Elle est néanmoins nécessaire, car les trajectoires issues d'un RRT peuvent accidentellement "rogner" sur un coin d'obstacle.
 
-__Protection des drones durant les manoeuvres__: pour l'instant, le système de prévention de collisions ne surveille que les drones en altitude de vol et disponibles au commandes. Lorsqu'un drone décolle ou atterit, il existe un bref instant ou il est invisible pour les collisions - mais à l'altitude de travail. 
+__3. Protection des drones durant les manoeuvres__: pour l'instant, le système de prévention de collisions ne surveille que les drones en altitude de vol et disponibles au commandes. Lorsqu'un drone décolle ou atterit, il existe un bref instant ou il est invisible pour les collisions - mais à l'altitude de travail. 
 
 Une extension du processus de contrôle corrigerait ce dernier point.
 
